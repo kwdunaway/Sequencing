@@ -74,10 +74,7 @@ my ($nonalignedreadsfile, $alignedpreseparationfile) = SeqProcess::run_bowtie($E
 
 
 # Separate Repeats from Uniqs
-my $uniqalignedreadsfile = $ExperimentTopDir . $BowtiePrefix . "_Uniq.txt";
-my $repalignedreadsfile = $ExperimentTopDir . $BowtiePrefix . "_Repeat.txt";
-#print $alignedpreseparationfile , " \n" , $uniqalignedreadsfile , "\n" , $repalignedreadsfile , "\n\n";
-print POSTBOWTIE "perl /home/kwdunaway/perl_script/Bowtie_separate.pl " , $alignedpreseparationfile , " " , $uniqalignedreadsfile , " " , $repalignedreadsfile , "\n\n";
+my ($uniqalignedreadsfile, $repalignedreadsfile) = SeqProcess::separate_repeats($ExperimentTopDir, $BowtiePrefix, $alignedpreseparationfile);
 
 # Zip Nonaligned and Repeat files 
 print POSTBOWTIE "gzip " , $nonalignedreadsfile , "\n";

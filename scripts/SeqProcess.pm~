@@ -78,8 +78,30 @@ sub separate_repeats {
 	my $uniqalignedreadsfile = $ExperimentTopDir . $BowtiePrefix . "_Uniq.txt";
 	my $repalignedreadsfile = $ExperimentTopDir . $BowtiePrefix . "_Repeat.txt";
 
-	print POSTBOWTIE "perl /home/kwdunaway/perl_script/Bowtie_separate.pl " , $alignedpreseparationfile , " " , $uniqalignedreadsfile , " " , $repalignedreadsfile , "\n\n";
+	open(IN, "<$alignedpreseparationfile") or die "cannot open $alignedpreseparationfile infile";
+	open(UNIQOUT, ">$uniqalignedreadsfile") or die "cannot open $uniqalignedreadsfile outfile";
+	open(REPOUT, ">$repalignedreadsfile") or die "cannot open $repalignedreadsfile outfile";
 
+	while (<IN>)
+	{
+		chomp;
+		my @line = split ("\t", $_);
+		if($line[6] > 0)
+		{
+			print REPOUT $_, "\n";
+		}
+		else
+		{
+			print UNIQOUT $_, "\n";
+		}
+	}
+
+
+	close IN;
+	close NONOUT;
+	close REPOUT;
+
+	return ($uniqalignedreadsfile, $repalignedreadsfile);
 }
 
 # Separate Repeats from Uniqs
