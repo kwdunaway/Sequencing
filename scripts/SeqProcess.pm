@@ -104,9 +104,65 @@ sub separate_repeats {
 	return ($uniqalignedreadsfile, $repalignedreadsfile);
 }
 
-# Separate Repeats from Uniqs
-# Separate into 3 different sets (uniq, nonuniq, unaligned)
-# ElandExt to BED
+###########################################################################
+#                     Eland Extended Format to BED                        #
+#                                                                         #
+#  This subroutine takes sequences in Eland Extended format (also known   #
+#  as s_#_export.txt files) and produces multiple BED files which can     #
+#  be used to analyze the data.                                           #
+#                                                                         #
+#  Input: 1) Input file name                                              #
+#         2) Output file name                                             #
+#         3) Read length                                                  #
+#         4) Chromosome array number                                      #
+#         5) Position array number                                        #
+#         6) Strand array number                                          #
+#         7) First Char                                                   #
+#                                                                         #
+# Output: 1)                                                              #
+###########################################################################
+
+sub elandext_to_bed {
+	my ($infile, $outfile, $readlength, $chr, $pos, $strand, $firstchar) = @_;
+
+	open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be read
+
+	my @array;
+	my $QCcount = 0;
+	my $NMcount = 0;
+	my $NonUniqcount = 0;
+	my $Unknowncount = 0;
+	my @ChrMapcount;
+	for (my $n = 0; $n < 27; $n++)
+	{
+		$ChrMapcount[$n] = 0;
+	}
+	my $totalcount = 0;
+	my $chrnum = 1;
+	my $filename;
+
+	$filename = $outfile . "/" . $outfile . "_chrX" . ".bed";
+	open(OUTX, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
+  
+	$filename = $outfile . "/" . $outfile . "_chrY" . ".bed";
+	open(OUTY, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
+
+	$filename = $outfile . "/" . $outfile . "_chrM" . ".bed";
+	open(OUTM, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
+  
+	$filename = $outfile . "/" . $outfile . "_NM.fq";
+	open(OUTNM, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
+
+	$filename = $outfile . "/" . $outfile . "_NonUnique.fq";
+	open(OUTNONUNIQ, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
+
+	$filename = $outfile . "/" . "Stats_" . $outfile . ".txt";
+	open(OUTSTAT, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
+
+	$filename = $outfile . "/" . "Unknown_" . $outfile . ".txt";
+	open(UNKNOWN, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
+
+}
 # BED to WIG
 # WIG to FPKMWIG
 # Vis FPKMWIG

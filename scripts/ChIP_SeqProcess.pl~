@@ -77,8 +77,8 @@ my ($nonalignedreadsfile, $alignedpreseparationfile) = SeqProcess::run_bowtie($E
 my ($uniqalignedreadsfile, $repalignedreadsfile) = SeqProcess::separate_repeats($ExperimentTopDir, $BowtiePrefix, $alignedpreseparationfile);
 
 # Zip Nonaligned and Repeat files 
-print POSTBOWTIE "gzip " , $nonalignedreadsfile , "\n";
-print POSTBOWTIE "gzip " , $repalignedreadsfile , "\n\n";
+`gzip $nonalignedreadsfile\n`;
+`gzip $repalignedreadsfile\n\n`;
 
 
 # Make BED files from Uniq bowtie output and zip the Uniq file
