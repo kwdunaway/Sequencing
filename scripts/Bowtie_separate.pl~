@@ -11,7 +11,7 @@ use strict; use warnings;
 # Arguments:
 #   1) Infile name
 #   2) Non Rep Outfile name
-#   3) Repetitive Outfile name
+#   3) Repetative Outfile name
 
 
 
@@ -22,7 +22,7 @@ use strict; use warnings;
 die "useage: Bowtie_separate.pl 
    1) Infile name
    2) Non Rep Outfile name
-   3) Repetitive Outfile name
+   3) Repetative Outfile name
 " unless @ARGV == 3;
 my $infile = shift(@ARGV);
 open(IN, "<$infile") or die "cannot open $infile infile";
