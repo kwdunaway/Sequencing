@@ -33,7 +33,7 @@ sub filter_zip {
 	my ($rawfqfolder) = @_;
 	my $filtered_fastq = $rawfqfolder . "filtered.fq";
 
-	`gunzip -c $rawfqfolder *.gz | grep -A 3 '^@.* [^:]*:N:[^:]*:' |   grep -v \"^--\$\" >  $filtered_fastq\n\n`;
+	`gunzip -c $rawfqfolder*.gz | grep -A 3 '^@.* [^:]*:N:[^:]*:' |   grep -v \"^--\$\" >  $filtered_fastq\n\n`;
 
 	return $filtered_fastq;
 }
@@ -104,10 +104,6 @@ sub separate_repeats {
 	return ($uniqalignedreadsfile, $repalignedreadsfile);
 }
 
-1;
-
-__END__
-
 ###########################################################################
 #                     Eland Extended Format to BED                        #
 #                                                                         #
@@ -129,8 +125,14 @@ __END__
 sub elandext_to_bed {
 	my ($infile, $outfile, $readlength, $chr, $pos, $strand, $firstchar) = @_;
 
-	open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be read
+	if (! -d $outfile)
+	{ 
+		`mkdir $outfile`; #creates dir if one doesn't exist
+		if (! -d $outfile) { die "directory ($outfile) does not exist"} 
+	}
 
+	open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be read
+	
 	my @array;
 	my $QCcount = 0;
 	my $NMcount = 0;
@@ -143,9 +145,16 @@ sub elandext_to_bed {
 	}
 	my $totalcount = 0;
 	my $chrnum = 1;
-	my $filename;
+	my $filename; # Outfile for each chromosome in bed
+	my @chr_out;
 
-	for(
+	#Create Bed File for each Chromosome
+	for(my $n = 0; $n < 23; $n++)
+	{
+		$filename = $outfile . "/" . $outfile . "_chr" . $chrnum . ".bed";
+		open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
+		$chrnum++;
+	}
 
 	$filename = $outfile . "/" . $outfile . "_chrX" . ".bed";
 	open(OUTX, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
