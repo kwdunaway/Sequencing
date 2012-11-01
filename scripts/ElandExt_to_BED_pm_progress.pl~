@@ -53,7 +53,7 @@ if (! -d $outfile)
 
 
 	##################################################
-	# Sets up variables, infile, and outfiles        #
+	#     Global Variables and I/O Initiation        #
 	##################################################
 
 	open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be read
@@ -77,7 +77,7 @@ if (! -d $outfile)
 	#                                                                          #
 	#   Chromosome 1 corresponds to $chr_out[0], Chr2 -> $chr_out[1], etc.     #
 	#                    ChrX = [23], ChrY = [24], ChrMitochondria = [25]      #
-	#   *Fastq Files* -> Nonmappable = [26], Nonunique = [27]                  #
+	#   *Fastq Files* -> Non-mappable = [26], Non-unique = [27]                  #
 	#   *Text Files*  -> Stats = [28], Unknown = [29]                          #
 	############################################################################
 
@@ -88,43 +88,104 @@ if (! -d $outfile)
 			if($n == 23)
 			{
 				$filename = $outfile . "/" . $outfile . "_chrX" . ".bed";
-				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
 			}
 			if($n == 24)
 			{
 				$filename = $outfile . "/" . $outfile . "_chrY" . ".bed";
-				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
 			}
 			if($n == 25)
 			{
 				$filename = $outfile . "/" . $outfile . "_chrM" . ".bed";
-				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile"; 
 			}
 			if($n == 26)
 			{
-				$filename = $outfile . "/" . $outfile . "_NM.fq";
-				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile"; 
+				$filename = $outfile . "/" . $outfile . "_NM.fq"; 
 			}
 			if($n == 27)
 			{
 				$filename = $outfile . "/" . $outfile . "_NonUnique.fq";
-				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
 			}
 			if($n == 28)
 			{
 				$filename = $outfile . "/" . "Stats_" . $outfile . ".txt";
-				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
 			}
 			if($n == 29)
 			{
 				$filename = $outfile . "/" . "Unknown_" . $outfile . ".txt";
-				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
 			}
 		}
 		else
 		{
 			$filename = $outfile . "/" . $outfile . "_chr" . ($n + 1) . ".bed";
-			open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
+		}
+		open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
+	}
+
+
+	############################################################################
+	#           Processing data into each chromosome output file               #
+	############################################################################
+
+	while (<IN>)
+	{
+		chomp;
+		@array = split("\t", $_);
+		$totalcount++;
+		# Non-mappable Reads
+		if ($array[$chr] eq "QC")
+		{ 
+			$chr_out[26]->print("$_" , "\n"); 
+			$QCcount++;
+		}
+		elsif ($array[$chr] eq "NM")
+		{ 	
+			$chr_out[26]->print("$_" , "\n");  
+			$NMcount++;
+		}
+		# Non-unique Reads
+		elsif ($array[$chr] =~ m/:/)
+		{ 	
+			$chr_out[27]->print("$_" , "\n"); 
+			$NonUniqcount++;
+		}
+		else 
+		{
+			for(my $n = 1; $n < 24; $n++)
+			{
+				if($array[$chr] =~ m/chr$n/)
+				{ 	
+					$chr_out[$n - 1]->print("chr$n \t" , $array[$pos] , "\t" , 
+								$array[$pos]+$readlength, "\t", 
+								$outfile , "\t", "0", "\t" , 
+								$array[$strand] , "\n");
+					$ChrMapcount[$n]++;
+				}
+				elsif($array[$chr] =~ m/chrX/)
+				{
+					$chr_out[23]->print("chrX \t" , $array[$pos] , "\t" , 
+								$array[$pos]+$readlength, "\t", 
+								$outfile , "\t", "0", "\t" , 
+								$array[$strand] , "\n");
+					$ChrMapcount[24]++;
+				}
+				elsif($array[$chr] =~ m/chrY/)
+				{
+					$chr_out[24]->print("chrY \t" , $array[$pos] , "\t" , 
+								$array[$pos]+$readlength, "\t", 
+								$outfile , "\t", "0", "\t" , 
+								$array[$strand] , "\n");
+					$ChrMapcount[25]++;
+				}
+				elsif($array[$chr] =~ m/chrM/)
+				{
+					$chr_out[25]->print("chrM \t" , $array[$pos] , "\t" , 
+								$array[$pos]+$readlength, "\t", 
+								$outfile , "\t", "0", "\t" , 
+								$array[$strand] , "\n");
+					$ChrMapcount[26]++;
+				}
+				$ChrMapcount[0]++;
+			}
 		}
 	}
 
@@ -133,6 +194,5 @@ if (! -d $outfile)
 		close($chr_out[$n]);
 	}
 	close(IN);
-
 
 

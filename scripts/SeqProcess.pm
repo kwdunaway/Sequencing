@@ -15,7 +15,8 @@ use strict; use warnings;
 #                        Header and Path Modifier                         #
 ###########################################################################
 
-sub add_path {
+sub add_path 
+{
 	my ($addtoPATH) = @_;
 
 	`#!/bin/bash\n\n`;
@@ -29,7 +30,8 @@ sub add_path {
 # Output: Filtered and Combined into one .fq file                         #
 ###########################################################################
 
-sub filter_zip {
+sub filter_zip 
+{
 	my ($rawfqfolder) = @_;
 	my $filtered_fastq = $rawfqfolder . "filtered.fq";
 
@@ -49,7 +51,8 @@ sub filter_zip {
 #         2) Aligned Preseparation File                                   #
 ###########################################################################
 
-sub run_bowtie {
+sub run_bowtie 
+{
 	my ($ExperimentTopDir, $BowtiePrefix, $mm9path, $filtered_fastq) = @_;
 	
 	`mkdir $ExperimentTopDir\n`;
@@ -72,7 +75,8 @@ sub run_bowtie {
 #         2) Repetitive Aligned Reads File                                #
 ###########################################################################
 
-sub separate_repeats {
+sub separate_repeats 
+{
 	my ($ExperimentTopDir, $BowtiePrefix, $alignedpreseparationfile) = @_;
 
 	my $uniqalignedreadsfile = $ExperimentTopDir . $BowtiePrefix . "_Uniq.txt";
@@ -82,15 +86,15 @@ sub separate_repeats {
 	open(UNIQOUT, ">$uniqalignedreadsfile") or die "cannot open $uniqalignedreadsfile outfile";
 	open(REPOUT, ">$repalignedreadsfile") or die "cannot open $repalignedreadsfile outfile";
 
-	while (<IN>)
+	while (<IN>) 
 	{
 		chomp;
 		my @line = split ("\t", $_);
-		if($line[6] > 0)
+		if($line[6] > 0) 
 		{
 			print REPOUT $_, "\n";
 		}
-		else
+		else 
 		{
 			print UNIQOUT $_, "\n";
 		}
@@ -122,12 +126,13 @@ sub separate_repeats {
 # Output: 1)                                                              #
 ###########################################################################
 
-sub elandext_to_bed {
+sub elandext_to_bed 
+{
 	# Input
 	my ($infile, $outfile, $readlength, $chr, $pos, $strand, $firstchar) = @_;
 
 	# Makes Output Directory
-	if (! -d $outfile)
+	if (! -d $outfile) 
 	{ 
 		`mkdir $outfile`; #creates dir if one doesn't exist
 		if (! -d $outfile) { die "directory ($outfile) does not exist"} 
