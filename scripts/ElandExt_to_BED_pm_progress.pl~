@@ -52,47 +52,87 @@ if (! -d $outfile)
 
 
 
-##################################################
-# Sets up global variables, infile, and outfiles #
-##################################################
+	##################################################
+	# Sets up variables, infile, and outfiles        #
+	##################################################
 
-open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be read
+	open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be read
 
-my @array;
-my $QCcount = 0;
-my $NMcount = 0;
-my $NonUniqcount = 0;
-my $Unknowncount = 0;
-my @ChrMapcount;
-for (my $n = 0; $n < 27; $n++)
-{
-    $ChrMapcount[$n] = 0;
-}
-my $totalcount = 0;
-my $chrnum = 1;
-my $filename; # Outfile for each chromosome in bed
-my @chr_out;
-
-#Create Bed File for each Chromosome
-for(my $n = 0; $n < 30; $n++)
-{
-	if($n > 23)
+	my @array;
+	my $QCcount = 0;
+	my $NMcount = 0;
+	my $NonUniqcount = 0;
+	my $Unknowncount = 0;
+	my @ChrMapcount;
+	for (my $n = 0; $n < 27; $n++)
 	{
-		if($n == 24)
+		$ChrMapcount[$n] = 0;
+	}
+	my $totalcount = 0;
+	my $filename; # Outfile for each chromosome in bed
+	my @chr_out; # Holds all the output files
+
+	############################################################################
+	#       Creates BED file for each Chromosome, Puts Output files in array   #
+	#                                                                          #
+	#   Chromosome 1 corresponds to $chr_out[0], Chr2 -> $chr_out[1], etc.     #
+	#                    ChrX = [23], ChrY = [24], ChrMitochondria = [25]      #
+	#   *Fastq Files* -> Nonmappable = [26], Nonunique = [27]                  #
+	#   *Text Files*  -> Stats = [28], Unknown = [29]                          #
+	############################################################################
+
+	for(my $n = 0; $n < 30; $n++)
+	{
+		if($n > 22)
 		{
-			$filename = $outfile . "/" . $outfile . "_chrX" . ".bed";
+			if($n == 23)
+			{
+				$filename = $outfile . "/" . $outfile . "_chrX" . ".bed";
+				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
+			}
+			if($n == 24)
+			{
+				$filename = $outfile . "/" . $outfile . "_chrY" . ".bed";
+				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
+			}
+			if($n == 25)
+			{
+				$filename = $outfile . "/" . $outfile . "_chrM" . ".bed";
+				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile"; 
+			}
+			if($n == 26)
+			{
+				$filename = $outfile . "/" . $outfile . "_NM.fq";
+				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile"; 
+			}
+			if($n == 27)
+			{
+				$filename = $outfile . "/" . $outfile . "_NonUnique.fq";
+				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
+			}
+			if($n == 28)
+			{
+				$filename = $outfile . "/" . "Stats_" . $outfile . ".txt";
+				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
+			}
+			if($n == 29)
+			{
+				$filename = $outfile . "/" . "Unknown_" . $outfile . ".txt";
+				open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
+			}
+		}
+		else
+		{
+			$filename = $outfile . "/" . $outfile . "_chr" . ($n + 1) . ".bed";
 			open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
 		}
 	}
-	else
-	{
-		$filename = $outfile . "/" . $outfile . "_chr" . ($n + 1) . ".bed";
-		open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
-	}
-	close($chr_out[$n]);
-}
 
-close(IN);
+	for(my $n = 0; $n < 30; $n++)
+	{
+		close($chr_out[$n]);
+	}
+	close(IN);
 
 
 

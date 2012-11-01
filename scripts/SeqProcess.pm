@@ -123,59 +123,16 @@ sub separate_repeats {
 ###########################################################################
 
 sub elandext_to_bed {
+	# Input
 	my ($infile, $outfile, $readlength, $chr, $pos, $strand, $firstchar) = @_;
 
+	# Makes Output Directory
 	if (! -d $outfile)
 	{ 
 		`mkdir $outfile`; #creates dir if one doesn't exist
 		if (! -d $outfile) { die "directory ($outfile) does not exist"} 
 	}
 
-	open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be read
-	
-	my @array;
-	my $QCcount = 0;
-	my $NMcount = 0;
-	my $NonUniqcount = 0;
-	my $Unknowncount = 0;
-	my @ChrMapcount;
-	for (my $n = 0; $n < 27; $n++)
-	{
-		$ChrMapcount[$n] = 0;
-	}
-	my $totalcount = 0;
-	my $chrnum = 1;
-	my $filename; # Outfile for each chromosome in bed
-	my @chr_out;
-
-	#Create Bed File for each Chromosome
-	for(my $n = 0; $n < 23; $n++)
-	{
-		$filename = $outfile . "/" . $outfile . "_chr" . $chrnum . ".bed";
-		open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
-		$chrnum++;
-	}
-
-	$filename = $outfile . "/" . $outfile . "_chrX" . ".bed";
-	open(OUTX, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
-  
-	$filename = $outfile . "/" . $outfile . "_chrY" . ".bed";
-	open(OUTY, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
-
-	$filename = $outfile . "/" . $outfile . "_chrM" . ".bed";
-	open(OUTM, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
-  
-	$filename = $outfile . "/" . $outfile . "_NM.fq";
-	open(OUTNM, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
-
-	$filename = $outfile . "/" . $outfile . "_NonUnique.fq";
-	open(OUTNONUNIQ, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
-
-	$filename = $outfile . "/" . "Stats_" . $outfile . ".txt";
-	open(OUTSTAT, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
-
-	$filename = $outfile . "/" . "Unknown_" . $outfile . ".txt";
-	open(UNKNOWN, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written
 
 }
 # BED to WIG
