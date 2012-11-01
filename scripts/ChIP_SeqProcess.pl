@@ -34,6 +34,8 @@ die "ChIPseq_pipeline.pl needs the following parameters:
 " unless @ARGV == 8;
 
 my $outprefix = shift(@ARGV);
+my $bowtieout = $outprefix . "_bowtie.bash";
+open(BOWTIE, ">$bowtieout") or die "cannot open $bowtieout outfile";
 my $postbowtieout = $outprefix . "_postbowtie.bash";
 open(POSTBOWTIE, ">$postbowtieout") or die "cannot open $postbowtieout outfile";
 my $ExperimentTopDir = shift(@ARGV);

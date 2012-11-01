@@ -98,11 +98,15 @@ sub separate_repeats {
 
 
 	close IN;
-	close NONOUT;
+	close UNIQOUT;
 	close REPOUT;
 
 	return ($uniqalignedreadsfile, $repalignedreadsfile);
 }
+
+1;
+
+__END__
 
 ###########################################################################
 #                     Eland Extended Format to BED                        #
@@ -140,6 +144,8 @@ sub elandext_to_bed {
 	my $totalcount = 0;
 	my $chrnum = 1;
 	my $filename;
+
+	for(
 
 	$filename = $outfile . "/" . $outfile . "_chrX" . ".bed";
 	open(OUTX, ">$filename") or die "cannot open $filename outfile"; #opens outfile to be written

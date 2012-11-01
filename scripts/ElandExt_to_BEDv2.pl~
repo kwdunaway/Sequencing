@@ -8,7 +8,7 @@ use strict; use warnings;
 # 6th column (strand notation) but have null values for columns 4 (name) and 5 (score).  This
 # program will also give statistics and separate out nonuniquely mapped reads.
 #
-# This is a little more flexable than other ElandExt_to_BED versions because all you need for 
+# This is a little more flexible than other ElandExt_to_BED versions because all you need for 
 # chromosomal notation is chr##  (ex: chr1 or chr13) somewhere in the chrom notation.  Also,
 # you can input read sequence length (which is better than the program figuring it out for speed
 # purposes.  Finally, you must input which array field the chromosome, position, and strand are
