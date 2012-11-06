@@ -123,7 +123,11 @@ sub separate_repeats
 #         6) Strand array number                                          #
 #         7) First Char                                                   #
 #                                                                         #
-# Output: 1)                                                              #
+# Output: Creates directory containing:                                   #
+#           1) BED files for each chromosome                              #
+#           2) Statistics on all reads                                    #
+#           3) Gzipped non-unique and non-mappable reads files            #
+#           4) Unknown reads file                                         #
 ###########################################################################
 
 sub elandext_to_bed 
@@ -144,27 +148,27 @@ sub elandext_to_bed
 
 	open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be read
 
-	my @array;
-	my $QCcount = 0;
-	my $NMcount = 0;
-	my $NonUniqcount = 0;
-	my $Unknowncount = 0;
+	my @array; # Contains the data to be parsed
+	my $QCcount = 0; # Low Quality Reads (placed in non-mappable reads)
+	my $NMcount = 0; # Non-mappable Reads
+	my $NonUniqcount = 0; # Non-unique Reads
+	my $Unknowncount = 0; # Unknown Reads
 	my @ChrMapcount;
 	for (my $n = 0; $n < 27; $n++)
 	{
 		$ChrMapcount[$n] = 0;
 	}
-	my $totalcount = 0;
+	my $totalcount = 0; #Total Mapped Reads
 	my $filename; # Outfile for each chromosome in bed
 	my @chr_out; # Holds all the output files
-	my $commandinput;
+	my $commandinput; # Holds Command Line Inputs
 
 	############################################################################
 	#       Creates BED file for each Chromosome, Puts Output files in array   #
 	#                                                                          #
 	#   Chromosome 1 corresponds to $chr_out[0], Chr2 -> $chr_out[1], etc.     #
 	#                    ChrX = [23], ChrY = [24], ChrMitochondria = [25]      #
-	#   *Fastq Files* -> Non-mappable = [26], Non-unique = [27]                  #
+	#   *Fastq Files* -> Non-mappable = [26], Non-unique = [27]                #
 	#   *Text Files*  -> Stats = [28], Unknown = [29]                          #
 	############################################################################
 
@@ -218,8 +222,8 @@ sub elandext_to_bed
 		chomp;
 		@array = split("\t", $_); # Splitting data into array
 		$totalcount++; # Total mapped reads
-		# Non-mappable Reads
-		if ($array[$chr] eq "QC") # Low quality reads
+		# Non-mappable reads
+		if ($array[$chr] eq "QC") # Low quality reads (placed in non-mappable reads)
 		{ 
 			$chr_out[26]->print("$_" , "\n"); 
 			$QCcount++;
@@ -229,7 +233,7 @@ sub elandext_to_bed
 			$chr_out[26]->print("$_" , "\n");  
 			$NMcount++;
 		}
-		# Non-unique Reads
+		# Non-unique reads
 		elsif ($array[$chr] =~ m/:/)
 		{ 	
 			$chr_out[27]->print("$_" , "\n"); 
@@ -242,7 +246,7 @@ sub elandext_to_bed
 			{
 				for(my $n = 1; $n < 24; $n++)
 				{	
-					if($array[$chr] =~ m/chr$n/)
+					if($array[$chr] =~ m/(chr$n)$/)
 					{ 	
 						$chr_out[$n - 1]->print("chr$n \t" , $array[$pos] ,
 								"\t" , $array[$pos]+$readlength, 									"\t", $outfile , "\t", "0", "\t" , 

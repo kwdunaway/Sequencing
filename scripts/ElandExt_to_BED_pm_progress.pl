@@ -132,7 +132,7 @@ if (! -d $outfile)
 		chomp;
 		@array = split("\t", $_); # Splitting data into array
 		$totalcount++; # Total mapped reads
-		# Non-mappable Reads
+		# Non-mappable reads
 		if ($array[$chr] eq "QC") # Low quality reads
 		{ 
 			$chr_out[26]->print("$_" , "\n"); 
@@ -143,7 +143,7 @@ if (! -d $outfile)
 			$chr_out[26]->print("$_" , "\n");  
 			$NMcount++;
 		}
-		# Non-unique Reads
+		# Non-unique reads
 		elsif ($array[$chr] =~ m/:/)
 		{ 	
 			$chr_out[27]->print("$_" , "\n"); 
@@ -156,7 +156,7 @@ if (! -d $outfile)
 			{
 				for(my $n = 1; $n < 24; $n++)
 				{	
-					if($array[$chr] =~ m/chr$n/)
+					if($array[$chr] =~ m/(chr$n)$/)
 					{ 	
 						$chr_out[$n - 1]->print("chr$n \t" , $array[$pos] ,
 								"\t" , $array[$pos]+$readlength, 									"\t", $outfile , "\t", "0", "\t" , 
