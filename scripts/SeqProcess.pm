@@ -9,6 +9,8 @@ use strict; use warnings;
 #
 # This is a module with sequencing processing commands.
 #
+# Subroutines: 1)
+#
 ################################################################################################
 
 ###########################################################################
@@ -332,7 +334,27 @@ sub elandext_to_bed
 	$commandinput = "gzip " . $outfile . "/" . $outfile . "_NonUnique.fq";
 	`$commandinput`;
 
+	############################################################################
+	#                            Sort All Bed Files                            #
+	############################################################################
 }
+
+###########################################################################
+#                               Sort BED File                             #
+#  Input: Unsorted BED file                                               #
+# Output: Sorted BED file                                                 #
+###########################################################################
+
+sub sort_bed
+{
+	my ($bedfile) = @_;
+	my $temp = $bedfile . "_sorted.bed";
+	`sort -n +1 -2 $bedfile > $temp`;
+	`rm $bedfile`;
+	`mv $temp $bedfile`;
+}
+
+
 # BED to WIG
 # WIG to FPKMWIG
 # Vis FPKMWIG

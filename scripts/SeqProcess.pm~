@@ -9,6 +9,8 @@ use strict; use warnings;
 #
 # This is a module with sequencing processing commands.
 #
+# Subroutines: 1)
+#
 ################################################################################################
 
 ###########################################################################
@@ -168,7 +170,7 @@ sub elandext_to_bed
 	#                                                                          #
 	#   Chromosome 1 corresponds to $chr_out[0], Chr2 -> $chr_out[1], etc.     #
 	#                    ChrX = [23], ChrY = [24], ChrMitochondria = [25]      #
-	#   *Fastq Files* -> Non-mappable = [26], Non-unique = [27]                  #
+	#   *Fastq Files* -> Non-mappable = [26], Non-unique = [27]                #
 	#   *Text Files*  -> Stats = [28], Unknown = [29]                          #
 	############################################################################
 
@@ -223,7 +225,7 @@ sub elandext_to_bed
 		@array = split("\t", $_); # Splitting data into array
 		$totalcount++; # Total mapped reads
 		# Non-mappable reads
-		if ($array[$chr] eq "QC") # Low quality reads
+		if ($array[$chr] eq "QC") # Low quality reads (placed in non-mappable reads)
 		{ 
 			$chr_out[26]->print("$_" , "\n"); 
 			$QCcount++;
@@ -331,8 +333,24 @@ sub elandext_to_bed
 	`$commandinput`;
 	$commandinput = "gzip " . $outfile . "/" . $outfile . "_NonUnique.fq";
 	`$commandinput`;
-
 }
+
+###########################################################################
+#                               Sort BED File                             #
+#  Input: Unsorted BED file                                               #
+# Output: Sorted BED file                                                 #
+###########################################################################
+
+sub sort_bed
+{
+	my ($bedfile) = @_;
+	my $temp = $bedfile . "_sorted.bed";
+	`sort -n +1 -2 $bedfile > $temp`;
+	`rm $bedfile`;
+	`mv $temp $bedfile`;
+}
+
+
 # BED to WIG
 # WIG to FPKMWIG
 # Vis FPKMWIG
