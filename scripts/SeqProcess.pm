@@ -155,7 +155,7 @@ sub elandext_to_bed
 	my $NMcount = 0; # Non-mappable Reads
 	my $NonUniqcount = 0; # Non-unique Reads
 	my $Unknowncount = 0; # Unknown Reads
-	my @ChrMapcount;
+	my @ChrMapcount; # Unique Mapped Reads by Chromosome
 	for (my $n = 0; $n < 27; $n++)
 	{
 		$ChrMapcount[$n] = 0;
@@ -164,6 +164,17 @@ sub elandext_to_bed
 	my $filename; # Outfile for each chromosome in bed
 	my @chr_out; # Holds all the output files
 	my $commandinput; # Holds Command Line Inputs
+
+	# Hash made to include X, Y, and M
+	my %chromosomes = (); # Contains chromosomes(keys = call number, values = chromosome number)
+
+	for(my $n = 1; $n < 24; $n++)
+	{
+		$chromosomes{$n} = $n;
+	}
+	$chromosomes{24} = "X";
+	$chromosomes{25} = "Y";
+	$chromosomes{26} = "M";
 
 	############################################################################
 	#       Creates BED file for each Chromosome, Puts Output files in array   #
@@ -180,15 +191,15 @@ sub elandext_to_bed
 		{
 			if($n == 23)
 			{
-				$filename = $outfile . "/" . $outfile . "_chrX" . ".bed";
+				$filename = $outfile . "/" . $outfile . "_chrX.bed";
 			}
 			if($n == 24)
 			{
-				$filename = $outfile . "/" . $outfile . "_chrY" . ".bed";
+				$filename = $outfile . "/" . $outfile . "_chrY.bed";
 			}
 			if($n == 25)
 			{
-				$filename = $outfile . "/" . $outfile . "_chrM" . ".bed";
+				$filename = $outfile . "/" . $outfile . "_chrM.bed";
 			}
 			if($n == 26)
 			{
@@ -244,42 +255,17 @@ sub elandext_to_bed
 		# Processing unique reads to chromosomes
 		elsif($array[$chr] =~ m/chr/)
 		{
-			if($array[$chr] =~ m/chr[0-9]/) # Chromosomes 1 to 23
-			{
-				for(my $n = 1; $n < 24; $n++)
-				{	
-					if($array[$chr] =~ m/(chr$n)$/)
-					{ 	
-						$chr_out[$n - 1]->print("chr$n \t" , $array[$pos] ,
-								"\t" , $array[$pos]+$readlength, 									"\t", $outfile , "\t", "0", "\t" , 
+			foreach my $chromosome(keys %chromosomes) # Check all chromosomes
+			{	
+				my $chr_value = $chromosomes{$chromosome};
+				if($array[$chr] =~ m/(chr$chr_value)$/)
+				{ 	
+					$chr_out[$chromosome-1]->print("chr", $chr_value, "\t" , 
+								$array[$pos] , "\t" , 
+								$array[$pos]+$readlength, 									"\t", $outfile , "\t", "0", "\t" , 
 								$array[$strand] , "\n");
-						$ChrMapcount[$n]++;
-					}
+					$ChrMapcount[$chromosome]++;
 				}
-			}
-			elsif($array[$chr] =~ m/chrX/) # Chromosome X
-			{
-				$chr_out[23]->print("chrX \t" , $array[$pos] , "\t" , 
-							$array[$pos]+$readlength, "\t", 
-							$outfile , "\t", "0", "\t" , 
-							$array[$strand] , "\n");
-				$ChrMapcount[24]++;
-			}
-			elsif($array[$chr] =~ m/chrY/) # Chromosome Y
-			{
-				$chr_out[24]->print("chrY \t" , $array[$pos] , "\t" , 
-							$array[$pos]+$readlength, "\t", 
-							$outfile , "\t", "0", "\t" , 
-							$array[$strand] , "\n");
-				$ChrMapcount[25]++;
-			}
-			elsif($array[$chr] =~ m/chrM/) # Chromosome of Mitochondria
-			{
-				$chr_out[25]->print("chrM \t" , $array[$pos] , "\t" , 
-							$array[$pos]+$readlength, "\t", 
-							$outfile , "\t", "0", "\t" , 
-							$array[$strand] , "\n");
-				$ChrMapcount[26]++;
 			}
 			$ChrMapcount[0]++; # Add to total number of uniquely mapped reads
 		}
@@ -340,27 +326,19 @@ sub elandext_to_bed
 
 	my $bedfile;
 
-	for (my $n = 1; $n < 24; $n++)
+	foreach my $chromosome(keys %chromosomes) # Check all chromosomes
 	{
-		$bedfile = $outfile . "/" . $outfile . "_chr" . $n . ".bed";
-		if ($ChrMapcount[$n] == 0)
+		my $chr_value = $chromosomes{$chromosome};
+		$bedfile = $outfile . "/" . $outfile . "_chr" . $chr_value . ".bed";
+		if ($ChrMapcount[$chromosome] == 0) # Check if empty
 		{
-			`rm $bedfile`;
+			`rm $bedfile`; # Delete if empty
 		}
 		else
 		{
 			sort_bed($bedfile);
 		}
 	}
-
-	$bedfile = $outfile . "/" . $outfile . "_chrX.bed";
-	sort_bed($bedfile);
-
-	$bedfile = $outfile . "/" . $outfile . "_chrY.bed";
-	sort_bed($bedfile);
-
-	$bedfile = $outfile . "/" . $outfile . "_chrM.bed";
-	sort_bed($bedfile);
 }
 
 ###########################################################################
