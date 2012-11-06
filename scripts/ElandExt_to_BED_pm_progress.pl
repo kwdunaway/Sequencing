@@ -242,3 +242,40 @@ if (! -d $outfile)
 	$commandinput = "gzip " . $outfile . "/" . $outfile . "_NonUnique.fq";
 	`$commandinput`;
 
+	############################################################################
+	#                            Sort All Bed Files                            #
+	############################################################################
+
+	my $bedfile;
+
+	for (my $n = 1; $n < 24; $n++)
+	{
+		$bedfile = $outfile . "/" . $outfile . "_chr" . $n . ".bed";
+		if ($ChrMapcount[$n] == 0)
+		{
+			`rm $bedfile`;
+		}
+		else
+		{
+			sort_bed($bedfile);
+		}
+	}
+
+	$bedfile = $outfile . "/" . $outfile . "_chrX.bed";
+	sort_bed($bedfile);
+
+	$bedfile = $outfile . "/" . $outfile . "_chrY.bed";
+	sort_bed($bedfile);
+
+	$bedfile = $outfile . "/" . $outfile . "_chrM.bed";
+	sort_bed($bedfile);
+
+sub sort_bed
+{
+	my ($bedfile) = @_;
+	my $temp = $bedfile . "_sorted.bed";
+	`sort -n +1 -2 $bedfile > $temp`;
+	`rm $bedfile`;
+	`mv $temp $bedfile`;
+}
+

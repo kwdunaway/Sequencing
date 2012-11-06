@@ -337,6 +337,30 @@ sub elandext_to_bed
 	############################################################################
 	#                            Sort All Bed Files                            #
 	############################################################################
+
+	my $bedfile;
+
+	for (my $n = 1; $n < 24; $n++)
+	{
+		$bedfile = $outfile . "/" . $outfile . "_chr" . $n . ".bed";
+		if ($ChrMapcount[$n] == 0)
+		{
+			`rm $bedfile`;
+		}
+		else
+		{
+			sort_bed($bedfile);
+		}
+	}
+
+	$bedfile = $outfile . "/" . $outfile . "_chrX.bed";
+	sort_bed($bedfile);
+
+	$bedfile = $outfile . "/" . $outfile . "_chrY.bed";
+	sort_bed($bedfile);
+
+	$bedfile = $outfile . "/" . $outfile . "_chrM.bed";
+	sort_bed($bedfile);
 }
 
 ###########################################################################
