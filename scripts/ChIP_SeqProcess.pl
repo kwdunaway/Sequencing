@@ -67,7 +67,7 @@ my $filtered_fastq = SeqProcess::filter_zip($rawfqfolder);
 my ($nonalignedreadsfile, $alignedpreseparationfile) = SeqProcess::run_bowtie($ExperimentTopDir, $BowtiePrefix, $mm9path, $filtered_fastq);
 
 # Remove made files
-`rm $filtered_fastq\n\n`;
+`rm $filtered_fastq`;
 
 
 ###############
@@ -79,13 +79,13 @@ my ($nonalignedreadsfile, $alignedpreseparationfile) = SeqProcess::run_bowtie($E
 my ($uniqalignedreadsfile, $repalignedreadsfile) = SeqProcess::separate_repeats($ExperimentTopDir, $BowtiePrefix, $alignedpreseparationfile);
 
 # Zip Nonaligned and Repeat files 
-`gzip $nonalignedreadsfile\n`;
-`gzip $repalignedreadsfile\n\n`;
+`gzip $nonalignedreadsfile`;
+`gzip $repalignedreadsfile`;
 
 
 # Make BED files from Uniq bowtie output and zip the Uniq file
 print POSTBOWTIE "perl /home/kwdunaway/perl_script/ElandExt_to_BEDv2.pl " , $uniqalignedreadsfile , " " , $BedFilePrefix , " " , $ReadLength , " 2 3 1 c\n";
-print POSTBOWTIE "gzip " , $uniqalignedreadsfile , "\n\n";
+`gzip $uniqalignedreadsfile`;
 
 # Extend BED file read length
 print POSTBOWTIE "mkdir "  , $ExperimentTopDir , $BedFilePrefix , "_bed\n";
