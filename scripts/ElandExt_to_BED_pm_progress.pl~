@@ -4,7 +4,7 @@ use strict; use warnings;
 # ElandExt_to_BEDv2.pl          6/6/12 version
 #
 # This program takes sequences in Eland Extended format (also known as s_#_export.txt files) and 
-# produces multiple files BED which can be used analyze the data.  The bed files go out to the 
+# produces multiple files BED which can be used to analyze the data.  The bed files go out to the 
 # 6th column (strand notation) but have null values for columns 4 (name) and 5 (score).  This
 # program will also give statistics and separate out nonuniquely mapped reads.
 #
@@ -71,6 +71,7 @@ if (! -d $outfile)
 	my $totalcount = 0;
 	my $filename; # Outfile for each chromosome in bed
 	my @chr_out; # Holds all the output files
+	my $commandinput;
 
 	############################################################################
 	#       Creates BED file for each Chromosome, Puts Output files in array   #
@@ -129,15 +130,15 @@ if (! -d $outfile)
 	while (<IN>)
 	{
 		chomp;
-		@array = split("\t", $_);
-		$totalcount++;
+		@array = split("\t", $_); # Splitting data into array
+		$totalcount++; # Total mapped reads
 		# Non-mappable Reads
-		if ($array[$chr] eq "QC")
+		if ($array[$chr] eq "QC") # Low quality reads
 		{ 
 			$chr_out[26]->print("$_" , "\n"); 
 			$QCcount++;
 		}
-		elsif ($array[$chr] eq "NM")
+		elsif ($array[$chr] eq "NM") # Non-mappable reads
 		{ 	
 			$chr_out[26]->print("$_" , "\n");  
 			$NMcount++;
@@ -148,51 +149,96 @@ if (! -d $outfile)
 			$chr_out[27]->print("$_" , "\n"); 
 			$NonUniqcount++;
 		}
-		else 
+		# Processing unique reads to chromosomes
+		elsif($array[$chr] =~ m/chr/)
 		{
-			for(my $n = 1; $n < 24; $n++)
+			if($array[$chr] =~ m/chr[0-9]/) # Chromosomes 1 to 23
 			{
-				if($array[$chr] =~ m/chr$n/)
-				{ 	
-					$chr_out[$n - 1]->print("chr$n \t" , $array[$pos] , "\t" , 
-								$array[$pos]+$readlength, "\t", 
-								$outfile , "\t", "0", "\t" , 
+				for(my $n = 1; $n < 24; $n++)
+				{	
+					if($array[$chr] =~ m/chr$n/)
+					{ 	
+						$chr_out[$n - 1]->print("chr$n \t" , $array[$pos] ,
+								"\t" , $array[$pos]+$readlength, 									"\t", $outfile , "\t", "0", "\t" , 
 								$array[$strand] , "\n");
-					$ChrMapcount[$n]++;
+						$ChrMapcount[$n]++;
+					}
 				}
-				elsif($array[$chr] =~ m/chrX/)
-				{
-					$chr_out[23]->print("chrX \t" , $array[$pos] , "\t" , 
-								$array[$pos]+$readlength, "\t", 
-								$outfile , "\t", "0", "\t" , 
-								$array[$strand] , "\n");
-					$ChrMapcount[24]++;
-				}
-				elsif($array[$chr] =~ m/chrY/)
-				{
-					$chr_out[24]->print("chrY \t" , $array[$pos] , "\t" , 
-								$array[$pos]+$readlength, "\t", 
-								$outfile , "\t", "0", "\t" , 
-								$array[$strand] , "\n");
-					$ChrMapcount[25]++;
-				}
-				elsif($array[$chr] =~ m/chrM/)
-				{
-					$chr_out[25]->print("chrM \t" , $array[$pos] , "\t" , 
-								$array[$pos]+$readlength, "\t", 
-								$outfile , "\t", "0", "\t" , 
-								$array[$strand] , "\n");
-					$ChrMapcount[26]++;
-				}
-				$ChrMapcount[0]++;
 			}
+			elsif($array[$chr] =~ m/chrX/) # Chromosome X
+			{
+				$chr_out[23]->print("chrX \t" , $array[$pos] , "\t" , 
+							$array[$pos]+$readlength, "\t", 
+							$outfile , "\t", "0", "\t" , 
+							$array[$strand] , "\n");
+				$ChrMapcount[24]++;
+			}
+			elsif($array[$chr] =~ m/chrY/) # Chromosome Y
+			{
+				$chr_out[24]->print("chrY \t" , $array[$pos] , "\t" , 
+							$array[$pos]+$readlength, "\t", 
+							$outfile , "\t", "0", "\t" , 
+							$array[$strand] , "\n");
+				$ChrMapcount[25]++;
+			}
+			elsif($array[$chr] =~ m/chrM/) # Chromosome of Mitochondria
+			{
+				$chr_out[25]->print("chrM \t" , $array[$pos] , "\t" , 
+							$array[$pos]+$readlength, "\t", 
+							$outfile , "\t", "0", "\t" , 
+							$array[$strand] , "\n");
+				$ChrMapcount[26]++;
+			}
+			$ChrMapcount[0]++; # Add to total number of uniquely mapped reads
 		}
+		else # Unknown data
+		{
+			$chr_out[29]->print("$_\n");
+			$Unknowncount = $Unknowncount + 1;
+  		}
 	}
 
+	############################################################################
+	#                  Printing statistics to Stats Outfile                    #
+	############################################################################
+
+	my $weirdcount = $totalcount - $QCcount - $NMcount - $NonUniqcount - $ChrMapcount[0];
+
+	for (my $n = 1; $n < 24; $n++)
+	{
+		if ($ChrMapcount[$n] > 0)
+		{
+			$chr_out[28]->print("Number of reads mapped to Chromosome $n is:\t" , 
+								$ChrMapcount[$n], "\n");
+		}
+	}
+	$chr_out[28]->print("Number of reads mapped to Chromosome X is:\t", $ChrMapcount[24], "\n");
+	$chr_out[28]->print("Number of reads mapped to Chromosome Y is:\t", $ChrMapcount[25], "\n");
+	$chr_out[28]->print("Number of reads mapped to Mitochondria is:\t", $ChrMapcount[26], "\n\n");
+	$chr_out[28]->print("Number of Uniquely mapped reads is:\t", $ChrMapcount[0], "\n");
+	$chr_out[28]->print("Number of NonUniquely mapped reads is:\t", $NonUniqcount, "\n");
+	$chr_out[28]->print("Number of QC (Low Quality reads) is:\t", $QCcount, "\n");
+	$chr_out[28]->print("Number of NM (nonmappable reads) is:\t", $NMcount, "\n");
+	$chr_out[28]->print("Number of unknown results (printed in separate file) is:\t", 
+								$Unknowncount, "\n");
+	$chr_out[28]->print("Number of weird reads (should be same as previous line) is:\t", 
+								$weirdcount, "\n");
+	$chr_out[28]->print("Number of Total mapped reads is:\t", $totalcount, "\n");
+
+	############################################################################
+	#      Closing Files and Gzip Non-mappable and Non-unique Reads Files      #
+	############################################################################
+
+	# Closing files
 	for(my $n = 0; $n < 30; $n++)
 	{
 		close($chr_out[$n]);
 	}
 	close(IN);
 
+	# Gzip Non-mappable and non-unique reads outfiles
+	$commandinput = "gzip " . $outfile . "/" . $outfile . "_NM.fq";
+	`$commandinput`;
+	$commandinput = "gzip " . $outfile . "/" . $outfile . "_NonUnique.fq";
+	`$commandinput`;
 

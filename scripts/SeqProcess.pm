@@ -138,6 +138,195 @@ sub elandext_to_bed
 		if (! -d $outfile) { die "directory ($outfile) does not exist"} 
 	}
 
+	##################################################
+	#     Global Variables and I/O Initiation        #
+	##################################################
+
+	open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be read
+
+	my @array;
+	my $QCcount = 0;
+	my $NMcount = 0;
+	my $NonUniqcount = 0;
+	my $Unknowncount = 0;
+	my @ChrMapcount;
+	for (my $n = 0; $n < 27; $n++)
+	{
+		$ChrMapcount[$n] = 0;
+	}
+	my $totalcount = 0;
+	my $filename; # Outfile for each chromosome in bed
+	my @chr_out; # Holds all the output files
+	my $commandinput;
+
+	############################################################################
+	#       Creates BED file for each Chromosome, Puts Output files in array   #
+	#                                                                          #
+	#   Chromosome 1 corresponds to $chr_out[0], Chr2 -> $chr_out[1], etc.     #
+	#                    ChrX = [23], ChrY = [24], ChrMitochondria = [25]      #
+	#   *Fastq Files* -> Non-mappable = [26], Non-unique = [27]                  #
+	#   *Text Files*  -> Stats = [28], Unknown = [29]                          #
+	############################################################################
+
+	for(my $n = 0; $n < 30; $n++)
+	{
+		if($n > 22)
+		{
+			if($n == 23)
+			{
+				$filename = $outfile . "/" . $outfile . "_chrX" . ".bed";
+			}
+			if($n == 24)
+			{
+				$filename = $outfile . "/" . $outfile . "_chrY" . ".bed";
+			}
+			if($n == 25)
+			{
+				$filename = $outfile . "/" . $outfile . "_chrM" . ".bed";
+			}
+			if($n == 26)
+			{
+				$filename = $outfile . "/" . $outfile . "_NM.fq"; 
+			}
+			if($n == 27)
+			{
+				$filename = $outfile . "/" . $outfile . "_NonUnique.fq";
+			}
+			if($n == 28)
+			{
+				$filename = $outfile . "/" . "Stats_" . $outfile . ".txt";
+			}
+			if($n == 29)
+			{
+				$filename = $outfile . "/" . "Unknown_" . $outfile . ".txt";
+			}
+		}
+		else
+		{
+			$filename = $outfile . "/" . $outfile . "_chr" . ($n + 1) . ".bed";
+		}
+		open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
+	}
+
+
+	############################################################################
+	#           Processing data into each chromosome output file               #
+	############################################################################
+
+	while (<IN>)
+	{
+		chomp;
+		@array = split("\t", $_); # Splitting data into array
+		$totalcount++; # Total mapped reads
+		# Non-mappable Reads
+		if ($array[$chr] eq "QC") # Low quality reads
+		{ 
+			$chr_out[26]->print("$_" , "\n"); 
+			$QCcount++;
+		}
+		elsif ($array[$chr] eq "NM") # Non-mappable reads
+		{ 	
+			$chr_out[26]->print("$_" , "\n");  
+			$NMcount++;
+		}
+		# Non-unique Reads
+		elsif ($array[$chr] =~ m/:/)
+		{ 	
+			$chr_out[27]->print("$_" , "\n"); 
+			$NonUniqcount++;
+		}
+		# Processing unique reads to chromosomes
+		elsif($array[$chr] =~ m/chr/)
+		{
+			if($array[$chr] =~ m/chr[0-9]/) # Chromosomes 1 to 23
+			{
+				for(my $n = 1; $n < 24; $n++)
+				{	
+					if($array[$chr] =~ m/chr$n/)
+					{ 	
+						$chr_out[$n - 1]->print("chr$n \t" , $array[$pos] ,
+								"\t" , $array[$pos]+$readlength, 									"\t", $outfile , "\t", "0", "\t" , 
+								$array[$strand] , "\n");
+						$ChrMapcount[$n]++;
+					}
+				}
+			}
+			elsif($array[$chr] =~ m/chrX/) # Chromosome X
+			{
+				$chr_out[23]->print("chrX \t" , $array[$pos] , "\t" , 
+							$array[$pos]+$readlength, "\t", 
+							$outfile , "\t", "0", "\t" , 
+							$array[$strand] , "\n");
+				$ChrMapcount[24]++;
+			}
+			elsif($array[$chr] =~ m/chrY/) # Chromosome Y
+			{
+				$chr_out[24]->print("chrY \t" , $array[$pos] , "\t" , 
+							$array[$pos]+$readlength, "\t", 
+							$outfile , "\t", "0", "\t" , 
+							$array[$strand] , "\n");
+				$ChrMapcount[25]++;
+			}
+			elsif($array[$chr] =~ m/chrM/) # Chromosome of Mitochondria
+			{
+				$chr_out[25]->print("chrM \t" , $array[$pos] , "\t" , 
+							$array[$pos]+$readlength, "\t", 
+							$outfile , "\t", "0", "\t" , 
+							$array[$strand] , "\n");
+				$ChrMapcount[26]++;
+			}
+			$ChrMapcount[0]++; # Add to total number of uniquely mapped reads
+		}
+		else # Unknown data
+		{
+			$chr_out[29]->print("$_\n");
+			$Unknowncount = $Unknowncount + 1;
+  		}
+	}
+
+	############################################################################
+	#                  Printing statistics to Stats Outfile                    #
+	############################################################################
+
+	my $weirdcount = $totalcount - $QCcount - $NMcount - $NonUniqcount - $ChrMapcount[0];
+
+	for (my $n = 1; $n < 24; $n++)
+	{
+		if ($ChrMapcount[$n] > 0)
+		{
+			$chr_out[28]->print("Number of reads mapped to Chromosome $n is:\t" , 
+								$ChrMapcount[$n], "\n");
+		}
+	}
+	$chr_out[28]->print("Number of reads mapped to Chromosome X is:\t", $ChrMapcount[24], "\n");
+	$chr_out[28]->print("Number of reads mapped to Chromosome Y is:\t", $ChrMapcount[25], "\n");
+	$chr_out[28]->print("Number of reads mapped to Mitochondria is:\t", $ChrMapcount[26], "\n\n");
+	$chr_out[28]->print("Number of Uniquely mapped reads is:\t", $ChrMapcount[0], "\n");
+	$chr_out[28]->print("Number of NonUniquely mapped reads is:\t", $NonUniqcount, "\n");
+	$chr_out[28]->print("Number of QC (Low Quality reads) is:\t", $QCcount, "\n");
+	$chr_out[28]->print("Number of NM (nonmappable reads) is:\t", $NMcount, "\n");
+	$chr_out[28]->print("Number of unknown results (printed in separate file) is:\t", 
+								$Unknowncount, "\n");
+	$chr_out[28]->print("Number of weird reads (should be same as previous line) is:\t", 
+								$weirdcount, "\n");
+	$chr_out[28]->print("Number of Total mapped reads is:\t", $totalcount, "\n");
+
+	############################################################################
+	#      Closing Files and Gzip Non-mappable and Non-unique Reads Files      #
+	############################################################################
+
+	# Closing files
+	for(my $n = 0; $n < 30; $n++)
+	{
+		close($chr_out[$n]);
+	}
+	close(IN);
+
+	# Gzip Non-mappable and non-unique reads outfiles
+	$commandinput = "gzip " . $outfile . "/" . $outfile . "_NM.fq";
+	`$commandinput`;
+	$commandinput = "gzip " . $outfile . "/" . $outfile . "_NonUnique.fq";
+	`$commandinput`;
 
 }
 # BED to WIG
