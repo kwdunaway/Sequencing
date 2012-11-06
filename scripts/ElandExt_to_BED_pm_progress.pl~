@@ -58,21 +58,21 @@ if (! -d $outfile)
 
 	open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be read
 
-	my @array;
-	my $QCcount = 0;
-	my $NMcount = 0;
-	my $NonUniqcount = 0;
-	my $Unknowncount = 0;
+	my @array; # Contains the data to be parsed
+	my $QCcount = 0; # Low Quality Reads (placed in non-mappable reads)
+	my $NMcount = 0; # Non-mappable Reads
+	my $NonUniqcount = 0; # Non-unique Reads
+	my $Unknowncount = 0; # Unknown Reads
 	my @ChrMapcount; # Unique Mapped Reads by Chromosome
 	for (my $n = 0; $n < 27; $n++)
 	{
 		$ChrMapcount[$n] = 0;
 	}
-	my $totalcount = 0;
+	my $totalcount = 0; #Total Mapped Reads
 	my $filename; # Outfile for each chromosome in bed
 	my @chr_out; # Holds all the output files
-	my $commandinput;
-	
+	my $commandinput; # Holds Command Line Inputs
+
 	# Hash made to include X, Y, and M
 	my %chromosomes = (); # Contains chromosomes(keys = call number, values = chromosome number)
 
@@ -85,8 +85,7 @@ if (! -d $outfile)
 	$chromosomes{26} = "M";
 
 	############################################################################
-	#     Creates BED file for each Chromosome, Puts Output files in array     #
-	#       *Note: These array numbers differ from the hash assignments*       #
+	#       Creates BED file for each Chromosome, Puts Output files in array   #
 	#                                                                          #
 	#   Chromosome 1 corresponds to $chr_out[0], Chr2 -> $chr_out[1], etc.     #
 	#                    ChrX = [23], ChrY = [24], ChrMitochondria = [25]      #
@@ -145,7 +144,7 @@ if (! -d $outfile)
 		@array = split("\t", $_); # Splitting data into array
 		$totalcount++; # Total mapped reads
 		# Non-mappable reads
-		if ($array[$chr] eq "QC") # Low quality reads
+		if ($array[$chr] eq "QC") # Low quality reads (placed in non-mappable reads)
 		{ 
 			$chr_out[26]->print("$_" , "\n"); 
 			$QCcount++;
@@ -164,7 +163,6 @@ if (! -d $outfile)
 		# Processing unique reads to chromosomes
 		elsif($array[$chr] =~ m/chr/)
 		{
-<<<<<<< HEAD
 			foreach my $chromosome(keys %chromosomes) # Check all chromosomes
 			{	
 				my $chr_value = $chromosomes{$chromosome};
@@ -173,16 +171,6 @@ if (! -d $outfile)
 					$chr_out[$chromosome-1]->print("chr", $chr_value, "\t" , 
 								$array[$pos] , "\t" , 
 								$array[$pos]+$readlength, 									"\t", $outfile , "\t", "0", "\t" , 
-=======
-			if($array[$chr] =~ m/chr[0-9]/) # Chromosomes 1 to 23
-			{
-				for(my $n = 1; $n < 24; $n++)
-				{	
-					if($array[$chr] =~ m/(chr$n)$/)
-					{ 	
-						$chr_out[$n - 1]->print("chr$n \t" , $array[$pos] ,
-								"\t" , $array[$pos]+$readlength, 									"\t", $outfile , "\t", "0", "\t" , 
->>>>>>> 1982054eea7862e156011e168dd93bd7417ef3ea
 								$array[$strand] , "\n");
 					$ChrMapcount[$chromosome]++;
 				}
