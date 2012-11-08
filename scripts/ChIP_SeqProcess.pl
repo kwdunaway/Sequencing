@@ -46,6 +46,8 @@ my $ReadLength = shift(@ARGV);
 my $ExtendedReadLength = shift(@ARGV);
 my $WIGTrackColor = shift(@ARGV);
 
+my $commandline; #inputs for command line
+
 #TODO: Must figure out how to get read count automatically
 my $ReadCount = 1;
 my $addtoPATH = "/home/kwdunaway/tuxedo/bowtie-0.12.7/:/home/kwdunaway/tuxedo/tophat-1.4.1.Linux_x86_64/:/home/kwdunaway/tuxedo/samtools/:/home/kwdunaway/tuxedo/cufflinks-1.3.0.Linux_x86_64/";
@@ -84,13 +86,19 @@ my ($uniqalignedreadsfile, $repalignedreadsfile) = SeqProcess::separate_repeats(
 
 
 # Make BED files from Uniq bowtie output and zip the Uniq file
-print POSTBOWTIE "perl /home/kwdunaway/perl_script/ElandExt_to_BEDv2.pl " , $uniqalignedreadsfile , " " , $BedFilePrefix , " " , $ReadLength , " 2 3 1 c\n";
+SeqProcess::elandext_to_bed($uniqalignedreadsfile, $BedFilePrefix, $ReadLength, 2, 3, 1, c);
 `gzip $uniqalignedreadsfile`;
 
 # Extend BED file read length
-print POSTBOWTIE "mkdir "  , $ExperimentTopDir , $BedFilePrefix , "_bed\n";
-print POSTBOWTIE "perl /home/kwdunaway/perl_script/extend_read_length.pl " , $BedFilePrefix , "/" , $BedFilePrefix , "_Chr " , $ExperimentTopDir , $BedFilePrefix , "_bed/" , $BedFilePrefix , " " , $ExtendedReadLength , "\n";
-print POSTBOWTIE "rm -R " , $BedFilePrefix , "\n\n";
+$commandline = "mkdir "  . $ExperimentTopDir . $BedFilePrefix . "_bed\n";
+`$commandline`;
+my $unextendedbedfiles = $BedFilePrefix . "/" . $BedFilePrefix . "_chr";
+my $extendedbedfiles = $ExperimentTopDir . $BedFilePrefix . "_bed/" . $BedFilePrefix;
+
+SeqProcess::extend_bed_read_length($unextendedbedfiles, $extendedbedfiles, $ExtendedReadLength);
+
+# Remove Unextended Bed Folder
+`rm -R $BedFilePrefix`;
 
 
 # Make WIG files

@@ -322,6 +322,7 @@ sub elandext_to_bed
 
 	############################################################################
 	#                            Sort All Bed Files                            #
+        #                     *Uses Sort Bed File subroutine*                      #
 	############################################################################
 
 	my $bedfile;
@@ -357,6 +358,66 @@ sub sort_bed
 	`mv $temp $bedfile`;
 }
 
+########################################################################################
+#                     Extend Read Length of BED Files                                  #
+# Takes a folder of bed files and creates a new one with read length                   #
+# extended directionally based on arguments input on command line.                     #
+#                                                                                      #
+#  Input: 1) Input Bed File prefix (ex: DY_Chr)                                        #
+#         2) Output Bed prefix without Chr (ex: NewDY will make NewDY_Chr*.bed files)  #
+#         3) Read Length extension (ex: 97)                                            #
+#                                                                                      #
+# Output: Extended Read Length BED Files                                               #
+########################################################################################
+
+sub extend_bed_read_length
+{
+	my ($inputbedprefix, $outputbedprefix, $readlengthextension) = @_;
+
+	my @Chr;             # array that contains all the the names of the mouse chromosomes
+	for (my $n = 1; $n< 20; $n++)
+	{
+		push(@Chr, $n);
+	}
+	push(@Chr, "M");
+	push(@Chr, "X");
+	push(@Chr, "Y");
+
+	while(@Chr)
+	{
+		my $chr = shift(@Chr);
+		my $inputfile = $inputbedprefix . $chr . ".bed";
+		open(IN, "<$inputfile") or die "cannot open $inputfile infile";
+		my $outfile = $outputbedprefix . "_Chr" . $chr . ".bed";
+		open(OUT, ">$outfile") or die "cannot open $outfile outfile";
+
+		print "Processing $inputfile \n";
+
+		while(<IN>)
+		{
+			chomp;
+    			my @line = split ("\t", $_);
+			my $start = $line[1];
+			my $end = $line[2];
+			if($line[5] eq "+")
+			{
+				my $end = $line[2]+$readlengthextension;
+				print OUT $line[0],"\t",$line[1],"\t",$end,"\t",$line[3],"\t",
+					$line[4],"\t",$line[5],"\n";
+			}
+			elsif($line[5] eq "-")
+			{
+				my $start = $line[1]-$readlengthextension;
+				print OUT $line[0],"\t",$start,"\t",$line[2],"\t",$line[3],"\t",
+					$line[4],"\t",$line[5],"\n";
+			}
+			else {die "$line[5] does not equal + or - \n";}
+		}
+
+		close(IN);
+		close(OUT);
+	}
+}
 
 # BED to WIG
 # WIG to FPKMWIG
