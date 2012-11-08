@@ -93,8 +93,11 @@ SeqProcess::elandext_to_bed($uniqalignedreadsfile, $BedFilePrefix, $ReadLength, 
 $commandline = "mkdir "  . $ExperimentTopDir . $BedFilePrefix . "_bed\n";
 `$commandline`;
 my $unextendedbedfiles = $BedFilePrefix . "/" . $BedFilePrefix . "_chr";
-my $extendedbedfiles = $ExperimentTopDir . $BedFilePrefix . "_bed/" . $BedFilePrefix; 
+my $extendedbedfiles = $ExperimentTopDir . $BedFilePrefix . "_bed/" . $BedFilePrefix;
+
 SeqProcess::extend_bed_read_length($unextendedbedfiles, $extendedbedfiles, $ExtendedReadLength);
+
+# Remove Unextended Bed Folder
 `rm -R $BedFilePrefix`;
 
 

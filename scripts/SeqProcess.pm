@@ -419,6 +419,17 @@ sub extend_bed_read_length
 	}
 }
 
+###########################################################################
+#                     BED Directory to VarStep WIG                        #
+#  Input: Unsorted BED file                                               #
+# Output: Sorted BED file                                                 #
+###########################################################################
+
+sub beddir_to_vswig
+{
+	my ($infileroot, $outfileroot, $wignameroot, $color) = @_;
+
+}
 # BED to WIG
 # WIG to FPKMWIG
 # Vis FPKMWIG
