@@ -29,7 +29,7 @@ die "ChIPseq_pipeline.pl needs the following parameters:
     4) Bowtie output prefix (will have 3 files with _Uniq, _Repeat, and _Nonaligned and located in Experiment Top Folder path)
     5) Bed file prefix
     6) Read length
-    7) Extended read length
+    7) Final read length
     8) WIG Track Color (in RRR,GGG,BBB format)
 " unless @ARGV == 8;
 
@@ -43,7 +43,7 @@ my $rawfqfolder = shift(@ARGV);
 my $BowtiePrefix = shift(@ARGV);
 my $BedFilePrefix = shift(@ARGV);
 my $ReadLength = shift(@ARGV);
-my $ExtendedReadLength = shift(@ARGV);
+my $FinalReadLength = shift(@ARGV);
 my $WIGTrackColor = shift(@ARGV);
 
 my $commandline; #inputs for command line
@@ -90,25 +90,34 @@ SeqProcess::elandext_to_bed($uniqalignedreadsfile, $BedFilePrefix, $ReadLength, 
 `gzip $uniqalignedreadsfile`;
 
 # Extend BED file read length
-$commandline = "mkdir "  . $ExperimentTopDir . $BedFilePrefix . "_bed\n";
+$commandline = "mkdir " . $ExperimentTopDir . $BedFilePrefix . "_bed\n";
 `$commandline`;
-my $unextendedbedfiles = $BedFilePrefix . "/" . $BedFilePrefix . "_chr";
+
+my $unextendedbedfiles =                   $BedFilePrefix .     "/" . $BedFilePrefix . "_chr";
 my $extendedbedfiles = $ExperimentTopDir . $BedFilePrefix . "_bed/" . $BedFilePrefix;
 
-SeqProcess::extend_bed_read_length($unextendedbedfiles, $extendedbedfiles, $ExtendedReadLength);
+SeqProcess::change_bed_read_length($unextendedbedfiles, $extendedbedfiles, $FinalReadLength);
 
 # Remove Unextended Bed Folder
 `rm -R $BedFilePrefix`;
 
 
 # Make WIG files
-$commandline = "mkdir "  . $ExperimentTopDir . $BedFilePrefix . "_VarStepWIG\n";
+$commandline = "mkdir " . $ExperimentTopDir . $BedFilePrefix . "_VarStepWIG\n";
 `$commandline`;
-print POSTBOWTIE "perl /home/kwdunaway/perl_script/BedDir_to_VarStepWIG.pl "  , $ExperimentTopDir , $BedFilePrefix , "_bed/" , $BedFilePrefix , "_Chr ", $ExperimentTopDir , $BedFilePrefix , "_VarStepWIG/", $BedFilePrefix , " " , $BedFilePrefix , " " , $WIGTrackColor , "\n";
 
-print POSTBOWTIE "mkdir " , $ExperimentTopDir , $BedFilePrefix , "_FPKMWIG\n"; 
-my $FullReadLength = $ReadLength + $ExtendedReadLength;
-print POSTBOWTIE "perl /home/kwdunaway/perl_script/VarStepWIG_to_FPKMWIG.pl " , $ExperimentTopDir , $BedFilePrefix , "_VarStepWIG/", $BedFilePrefix ,  "_Chr " , $ExperimentTopDir , $BedFilePrefix , "_FPKMWIG/" , $BedFilePrefix , "_FPKM " , $FullReadLength , " " , $ReadCount , "\n";
+my $bedtowigfiles = $ExperimentTopDir . $BedFilePrefix . "_bed/"        . $BedFilePrefix . "_Chr";
+my $wigfiles =      $ExperimentTopDir . $BedFilePrefix . "_VarStepWIG/" . $BedFilePrefix;
+
+SeqProcess::beddir_to_vswig($bedtowigfiles, $wigfiles, $BedFilePrefix, $WIGTrackColor);
+
+$commandline = "mkdir " . $ExperimentTopDir . $BedFilePrefix . "_FPKMWIG\n";
+`$commandline`;
+
+my $varstepwigfiles = $ExperimentTopDir . $BedFilePrefix . "_VarStepWIG/" . $BedFilePrefix . "_Chr";
+my $fpkmwigfiles =    $ExperimentTopDir . $BedFilePrefix . "_FPKMWIG/"    . $BedFilePrefix . "_FPKM";
+
+SeqProcess::vswig_to_fpkmwig($varstepwigfiles, $fpkmwigfiles, $FinalReadLength, $ReadCount);
 
 
 __END__

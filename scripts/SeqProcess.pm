@@ -431,7 +431,7 @@ sub extend_bed_read_length
 # Output: New Read Length BED Files                                                    #
 ########################################################################################
 
-sub bed_read_length
+sub change_bed_read_length
 {
 	# Input
 	my ($inputbedprefix, $outputbedprefix, $readlengthextension) = @_;
@@ -482,12 +482,12 @@ sub bed_read_length
 }
 
 ###########################################################################
-#                     BED Directory to VarStep WIG                        #
+#                 BED Directory to Variable Step WIG                      #
 # Converts a directory of BED files to a directory of WIG files           #
 #                                                                         #
 #  Input: 1) Input BED File prefix (ex: DY_Chr)                           #
-#         2) Output WIG prefix                                            #
-#         3) WIG Name Prefix (for genome browser)                         #
+#         2) Output WIG prefix without Chr (ex: NewDY -> NewDY_Chr*.wig)  #
+#         3) WIG Track Name Prefix (for genome browser)                   #
 #         4) WIG Track Color (Format: RRR,GGG,BBB)                        #
 #                                                                         #
 # Output: Directory of .wig Files                                         #
@@ -621,7 +621,84 @@ sub beddir_to_vswig
 	}
 
 }
-# WIG to FPKMWIG
+
+###########################################################################
+#                     Variable Step WIG to FPKM WIG                       #
+# Calculates FPKM (Fragments Per Kb of exon per Million mapped reads)     #
+# from raw WIG files using read length and read count (in millions)       #
+#                                                                         #
+#  Input: 1) Input VarStepWIG prefix (format: position [tab] height)      #
+#         2) Output FPKM WIG prefix without Chr                           #
+#         3) Read Length                                                  #
+#         4) Read Count (in millions)                                     #
+#                                                                         #
+# Output: Directory of FPKM WIG Files                                     #
+###########################################################################
+
+sub vswig_to_fpkmwig
+{
+	# Input
+	my ($inputWIGprefix, $outprefix, $readlength, $readcount) = @_;
+
+	##################################################
+	#     Global Variables and I/O Initiation        #
+	##################################################
+
+	my @Chr;             # array that contains all the the names of the mouse chromosomes
+	for (my $n = 1; $n < 20; $n++)
+	{
+		push(@Chr, $n);
+	}
+	push(@Chr, "M");
+	push(@Chr, "X");
+	push(@Chr, "Y");
+
+	#############################################
+	# Calculate and print OUT FPKM from file(s) #
+	#############################################
+
+	while(@Chr)
+	{
+		my $chr = shift(@Chr);
+		print "Now Converting: Chr$chr\n";
+		my $inputWIG = $inputWIGprefix . $chr . ".wig";
+		my $outfile = $outprefix . "_Chr" . $chr . ".wig";
+		open(INWIG, "<$inputWIG") or die "cannot open $inputWIG INWIG infile";
+		open(OUT, ">$outfile") or die "cannot open $outfile outfile";
+		my $lin = <INWIG>;
+		print OUT $lin;
+		$lin = <INWIG>;
+		print OUT $lin;
+		while(<INWIG>)
+		{
+			chomp;
+			my @line = split ("\t", $_);
+			if(exists $line[1])
+			{
+	    			my $FPKM = ($line[1] * 1000) / ($readlength * $readcount);
+				$FPKM = sprintf("%.4f",$FPKM);
+				print OUT $line[0], "\t" , $FPKM,"\n";
+			}
+		}
+	close OUT;
+	close INWIG;
+	}
+	
+}
+
+###########################################################################
+#                            Visualize FPKM WIG                           #
+# Combines FPKM (Fragments Per Kb of exon per Million mapped reads)       #
+# files given multipliers for them                                        #
+#                                                                         #
+#  Input: 1) Input prefix for FPKM WIG files(leave out chr# and .wig)     #
+#         2) Output prefix FPKM WIG files without Chr                     #
+#         3) Step Size                                                    #
+#         4) WIG Track Color (Format: RRR,GGG,BBB)                        #
+#         5) WIG Track Name Prefix (for genome browser)                   #
+#                                                                         #
+# Output: Directory of FPKM WIG Files                                     #
+###########################################################################
 # Vis FPKMWIG
 
 
