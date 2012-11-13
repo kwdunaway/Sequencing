@@ -26,12 +26,7 @@ my $color = shift(@ARGV);
 
 my @Chr;           # array that contains all the the names of the chromosomes
 
-push(@Chr, "1");
-for (my $n = 10; $n< 20; $n++)
-{
-    push(@Chr, $n);
-}
-for (my $n = 2; $n< 10; $n++)
+for (my $n = 1; $n< 20; $n++)
 {
     push(@Chr, $n);
 }

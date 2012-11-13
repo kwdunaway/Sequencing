@@ -86,7 +86,7 @@ my ($uniqalignedreadsfile, $repalignedreadsfile) = SeqProcess::separate_repeats(
 
 
 # Make BED files from Uniq bowtie output and zip the Uniq file
-SeqProcess::elandext_to_bed($uniqalignedreadsfile, $BedFilePrefix, $ReadLength, 2, 3, 1, c);
+SeqProcess::elandext_to_bed($uniqalignedreadsfile, $BedFilePrefix, $ReadLength, 2, 3, 1);
 `gzip $uniqalignedreadsfile`;
 
 # Extend BED file read length

@@ -102,8 +102,8 @@ SeqProcess::extend_bed_read_length($unextendedbedfiles, $extendedbedfiles, $Exte
 
 
 # Make WIG files
-#print POSTBOWTIE "mkdir "  , $ExperimentTopDir , $BedFilePrefix , "_wig\n";
-print POSTBOWTIE "mkdir " , $ExperimentTopDir , $BedFilePrefix , "_VarStepWIG\n"; 
+$commandline = "mkdir "  . $ExperimentTopDir . $BedFilePrefix . "_VarStepWIG\n";
+`$commandline`;
 print POSTBOWTIE "perl /home/kwdunaway/perl_script/BedDir_to_VarStepWIG.pl "  , $ExperimentTopDir , $BedFilePrefix , "_bed/" , $BedFilePrefix , "_Chr ", $ExperimentTopDir , $BedFilePrefix , "_VarStepWIG/", $BedFilePrefix , " " , $BedFilePrefix , " " , $WIGTrackColor , "\n";
 
 print POSTBOWTIE "mkdir " , $ExperimentTopDir , $BedFilePrefix , "_FPKMWIG\n"; 

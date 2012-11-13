@@ -21,10 +21,10 @@ my $color = shift(@ARGV);
 
 
 ###################################################
-# Global variables needed and their explainations #
+# Global variables needed and their explanations  #
 ###################################################
 
-my @Chr;                                               # array that contains all the the names of the chromosomes
+my @Chr;           # array that contains all the the names of the chromosomes
 
 push(@Chr, "1");
 for (my $n = 10; $n< 20; $n++)
