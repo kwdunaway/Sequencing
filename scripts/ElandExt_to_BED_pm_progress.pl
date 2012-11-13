@@ -155,7 +155,7 @@ if (! -d $outfile)
 			$NMcount++;
 		}
 		# Non-unique reads
-		elsif ($array[$chr] =~ m/:/)
+		elsif ($array[6] > 0)
 		{ 	
 			$chr_out[27]->print("$_" , "\n"); 
 			$NonUniqcount++;

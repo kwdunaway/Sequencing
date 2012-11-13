@@ -234,7 +234,6 @@ if (! -d $outfile)
 
 	my $bedfile;
 
-<<<<<<< HEAD
 	foreach my $chromosome(keys %chromosomes) # Check all chromosomes
 	{
 		my $chr_value = $chromosomes{$chromosome};
@@ -242,14 +241,7 @@ if (! -d $outfile)
 		if ($ChrMapcount[$chromosome] == 0) # Check if empty
 		{
 			`rm $bedfile`; # Delete if empty
-=======
-	for (my $n = 1; $n < 24; $n++)
-	{
-		$bedfile = $outfile . "/" . $outfile . "_chr" . $n . ".bed";
-		if ($ChrMapcount[$n] == 0)
-		{
-			`rm $bedfile`;
->>>>>>> 1982054eea7862e156011e168dd93bd7417ef3ea
+
 		}
 		else
 		{
@@ -257,18 +249,6 @@ if (! -d $outfile)
 		}
 	}
 
-<<<<<<< HEAD
-=======
-	$bedfile = $outfile . "/" . $outfile . "_chrX.bed";
-	sort_bed($bedfile);
-
-	$bedfile = $outfile . "/" . $outfile . "_chrY.bed";
-	sort_bed($bedfile);
-
-	$bedfile = $outfile . "/" . $outfile . "_chrM.bed";
-	sort_bed($bedfile);
-
->>>>>>> 1982054eea7862e156011e168dd93bd7417ef3ea
 sub sort_bed
 {
 	my ($bedfile) = @_;
