@@ -7,14 +7,39 @@ use strict; use warnings;
 # Date: 10-30-2012
 # Module Name: SeqProcess.pm
 #
-# This is a module with sequencing processing commands.
+# This is a module with sequencing processing commands related to the 
+# chromatin immunoprecipitation sequencing process (ChIP-Seq).
 #
-# Subroutines: 1)
+# Jump to each subroutine by searching for the number (e.g. "(6)" ) or name (e.g. "Sort BED File" ).
+# Descriptions of each subroutine can be found above their code.
+#
+# Subroutines: 
+#              (1) Header and Path Modifier
+#
+#              -Bowtie Related-
+#              (2) Combine and Filter Zipped Fastq Files
+#              (3) Run Bowtie for Non-aligned and Aligned Reads
+#              (4) Separate Aligned Reads - Repeats from Uniques
+#
+#              -Eland Extended/BED Related-
+#              (5) Eland Extended Format to BED
+#              (6) Sort BED File
+#              (7) Eliminate Duplicate Reads in BED Files
+#              (8) Extend Read Length of BED Files
+#              (9) Change Read Length of BED Files (Choose Read Length)
+#
+#              -RPKM/FPKM/WIG Related-
+#             (10) BED Directory to Variable Step WIG
+#             (11) Variable Step WIG to FPKM WIG
+#             (12) BED Directory to FPKM WIG
+#             (13) Visualize FPKM WIG
+#             (14) RPKM From BED and GTF
+#             (15) FPKM from GTF and FPKMWIG
 #
 ################################################################################################
 
 ###########################################################################
-#                        Header and Path Modifier                         #
+#                     (1) Header and Path Modifier                        #
 ###########################################################################
 
 sub add_path 
@@ -27,7 +52,7 @@ sub add_path
 }
 
 ###########################################################################
-#                 Combine and Filter Zipped Files                         #
+#              (2) Combine and Filter Zipped Fastq Files                  #
 #  Input: Raw file folder (only zipped files and the extension is .fq.gz) #
 # Output: Returns: Filtered and Combined into one .fq file                #
 ###########################################################################
@@ -43,7 +68,7 @@ sub filter_zip
 }
 	
 ###########################################################################
-#                               Run Bowtie                                #
+#            (3) Run Bowtie for Non-aligned and Aligned Reads             #
 #  Input: 1) Experiment Top Folder path                                   #
 #         2) Bowtie output prefix                                         #
 #         3) MM9 Path                                                     #
@@ -68,7 +93,7 @@ sub run_bowtie
 }
 
 ###########################################################################
-#                     Separate Repeats from Uniques                       #
+#             (4) Separate Aligned Reads - Repeats from Uniques           #
 #  Input: 1) Experiment Top Folder path                                   #
 #         2) Bowtie output prefix                                         #
 #         3) Aligned Preseparation File                                   #
@@ -111,7 +136,7 @@ sub separate_repeats
 }
 
 ###########################################################################
-#                     Eland Extended Format to BED                        #
+#                   (5) Eland Extended Format to BED                      #
 #   *             Note: subroutine calls the "Sort BED"               *   #
 #   *        and "Eliminate Duplicate BED Reads" subroutines          *   #
 #                                                                         #
@@ -346,7 +371,7 @@ sub elandext_to_bed
 }
 
 ###########################################################################
-#                               Sort BED File                             #
+#                           (6) Sort BED File                             #
 #  Input: Unsorted BED file                                               #
 # Output: Sorted BED file (replaces unsorted file)                        #
 ###########################################################################
@@ -361,7 +386,7 @@ sub sort_bed
 }
 
 ###########################################################################
-#                 Eliminates Duplicate Reads in BED Files                 #
+#               (7) Eliminate Duplicate Reads in BED Files                #
 # Checks BED files for duplicate reads and deletes the duplicates         #
 #                                                                         #
 #  Input: Sorted BED File                                                 #
@@ -419,7 +444,7 @@ sub eliminate_bed_dups
 }
 
 ########################################################################################
-#                     Extend Read Length of BED Files                                  #
+#                   (8) Extend Read Length of BED Files                                #
 # Takes a folder of bed files and creates a new one with read length                   #
 # extended directionally based on arguments input on command line.                     #
 #                                                                                      #
@@ -481,7 +506,7 @@ sub extend_bed_read_length
 }
 
 ########################################################################################
-#                     Change Read Length of BED Files                                  #
+#            (9) Change Read Length of BED Files (Choose Read Length)                  #
 # Takes a folder of bed files and creates a new one with read length based on          #
 # arguments input on command line (This is a version of extend_bed_read_length).       #
 #                                                                                      #
@@ -543,7 +568,7 @@ sub change_bed_read_length
 }
 
 ###########################################################################
-#                 BED Directory to Variable Step WIG                      #
+#              (10) BED Directory to Variable Step WIG                    #
 # Converts a directory of BED files to a directory of WIG files           #
 #                                                                         #
 #  Input: 1) Input BED File prefix (ex: DY_Chr)                           #
@@ -684,7 +709,7 @@ sub beddir_to_vswig
 }
 
 ###########################################################################
-#                     Variable Step WIG to FPKM WIG                       #
+#                  (11) Variable Step WIG to FPKM WIG                     #
 # Calculates FPKM (Fragments Per Kilobase per Million mapped reads)       #
 # from raw WIG files using read length and read count (in millions)       #
 #                                                                         #
@@ -748,7 +773,7 @@ sub vswig_to_fpkmwig
 }
 
 ###########################################################################
-#                       BED Directory to FPKM WIG                         #
+#                    (12) BED Directory to FPKM WIG                       #
 #   * Note: subroutine calls the "BED Directory to Variable Step WIG" *   #
 #   *        and "Variable Step WIG to FPKM WIG" subroutines          *   #
 #                                                                         #
@@ -783,7 +808,7 @@ sub beddir_to_fpkmwig
 }
 
 ###########################################################################
-#                            Visualize FPKM WIG                           #
+#                         (13) Visualize FPKM WIG                         #
 # Combines FPKM (Fragments Per Kilobase per Million mapped reads)         #
 # files given multipliers for them                                        #
 #                                                                         #
@@ -882,7 +907,7 @@ sub visualize_fpkmwig
 }
 
 ###########################################################################
-#                          RPKM From BED and GTF                          #
+#                       (14) RPKM From BED and GTF                        #
 # Scores RPKM (Reads Per Kilobase per Million mapped reads)               #
 # for the given GTF file and Bed directory/prefix                         #
 #                                                                         #
@@ -1034,7 +1059,7 @@ sub rpkm_from_bed
 }
 
 ###########################################################################
-#                        FPKM from GTF and FPKMWIG                        #
+#                    (15) FPKM from GTF and FPKMWIG                       #
 # Scores FPKM (Fragments Per Kilobase per Million mapped reads)           #
 # for the given GTF file and FPKMWIG directory/prefix                     #
 #                                                                         #

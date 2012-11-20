@@ -8,13 +8,16 @@ use SeqProcess;
 # Date: 10-30-2012
 # Script Name: ChIP_SeqProcess.pl
 #
-# Takes a folder of bed files and creates a new one with read length extended directionally
-# based on arguments input on command line.
+# This script processes the subroutines in SeqProcess.pm.
 #
 # Arguments:
-#    1) Input Bed File prefix (ex: DY_Chr)
-#    2) Output Bed prefix without Chr (ex: NewDY will make NewDY_Chr*.bed files) 
-#    3) Read Length extension (ex: 97)
+#   1) Experiment Top Folder path
+#   2) Raw file folder (make sure they are the only zipped files and the extension is .fq.gz) 
+#   3) Bowtie output prefix (will have 3 files with _Uniq, _Repeat, and _Nonaligned and located in #        Experiment Top Folder path)
+#   4) Bed file prefix
+#   5) Read length
+#   6) Final read length
+#   7) WIG Track Color (in RRR,GGG,BBB format)
 #
 ################################################################################################
 
@@ -22,7 +25,7 @@ use SeqProcess;
 # Command Line Error Checking. Global Variables and I/O Initiation #
 ####################################################################
 
-die "ChIPseq_pipeline.pl needs the following parameters:
+die "ChIP_SeqProcess.pl needs the following parameters:
     1) Experiment Top Folder path
     2) Raw file folder (make sure they are the only zipped files and the extension is .fq.gz) 
     3) Bowtie output prefix (will have 3 files with _Uniq, _Repeat, and _Nonaligned and located in Experiment Top Folder path)
@@ -83,14 +86,14 @@ my ($uniqalignedreadsfile, $repalignedreadsfile) = SeqProcess::separate_repeats(
 SeqProcess::elandext_to_bed($uniqalignedreadsfile, $BedFilePrefix, $ReadLength, 2, 3, 1);
 `gzip $uniqalignedreadsfile`;
 
-# Change BED file read length (Change the total)
+# Change BED file read length (Choose the read length)
 $commandline = "mkdir " . $ExperimentTopDir . $BedFilePrefix . "_bed\n";
 `$commandline`;
 
-my $unextendedbedfiles =                   $BedFilePrefix .     "/" . $BedFilePrefix . "_chr";
-my $extendedbedfiles = $ExperimentTopDir . $BedFilePrefix . "_bed/" . $BedFilePrefix;
+my $origlengthbedfiles =                      $BedFilePrefix .     "/" . $BedFilePrefix . "_chr";
+my $finallengthbedfiles = $ExperimentTopDir . $BedFilePrefix . "_bed/" . $BedFilePrefix;
 
-SeqProcess::change_bed_read_length($unextendedbedfiles, $extendedbedfiles, $FinalReadLength);
+SeqProcess::change_bed_read_length($origlengthbedfiles, $finallengthbedfiles, $FinalReadLength);
 
 # Remove Unextended Bed Folder
 `rm -R $BedFilePrefix`;
