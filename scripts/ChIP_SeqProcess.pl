@@ -23,21 +23,15 @@ use SeqProcess;
 ####################################################################
 
 die "ChIPseq_pipeline.pl needs the following parameters:
-    1) Output files name (will add _bowtie.bash and _postbowtie.bash)
-    2) Experiment Top Folder path
-    3) Raw file folder (make sure they are the only zipped files and the extension is .fq.gz) 
-    4) Bowtie output prefix (will have 3 files with _Uniq, _Repeat, and _Nonaligned and located in Experiment Top Folder path)
-    5) Bed file prefix
-    6) Read length
-    7) Final read length
-    8) WIG Track Color (in RRR,GGG,BBB format)
-" unless @ARGV == 8;
+    1) Experiment Top Folder path
+    2) Raw file folder (make sure they are the only zipped files and the extension is .fq.gz) 
+    3) Bowtie output prefix (will have 3 files with _Uniq, _Repeat, and _Nonaligned and located in Experiment Top Folder path)
+    4) Bed file prefix
+    5) Read length
+    6) Final read length
+    7) WIG Track Color (in RRR,GGG,BBB format)
+" unless @ARGV == 7;
 
-my $outprefix = shift(@ARGV);
-my $bowtieout = $outprefix . "_bowtie.bash";
-open(BOWTIE, ">$bowtieout") or die "cannot open $bowtieout outfile";
-my $postbowtieout = $outprefix . "_postbowtie.bash";
-open(POSTBOWTIE, ">$postbowtieout") or die "cannot open $postbowtieout outfile";
 my $ExperimentTopDir = shift(@ARGV);
 my $rawfqfolder = shift(@ARGV);
 my $BowtiePrefix = shift(@ARGV);
@@ -89,7 +83,7 @@ my ($uniqalignedreadsfile, $repalignedreadsfile) = SeqProcess::separate_repeats(
 SeqProcess::elandext_to_bed($uniqalignedreadsfile, $BedFilePrefix, $ReadLength, 2, 3, 1);
 `gzip $uniqalignedreadsfile`;
 
-# Extend BED file read length
+# Change BED file read length (Change the total)
 $commandline = "mkdir " . $ExperimentTopDir . $BedFilePrefix . "_bed\n";
 `$commandline`;
 
