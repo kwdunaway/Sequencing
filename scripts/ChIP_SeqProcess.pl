@@ -99,23 +99,14 @@ SeqProcess::change_bed_read_length($origlengthbedfiles, $finallengthbedfiles, $F
 `rm -R $BedFilePrefix`;
 
 
-# Make WIG files
-$commandline = "mkdir " . $ExperimentTopDir . $BedFilePrefix . "_VarStepWIG\n";
-`$commandline`;
-
-my $bedtowigfiles = $ExperimentTopDir . $BedFilePrefix .        "_bed/" . $BedFilePrefix . "_Chr";
-my $wigfiles =      $ExperimentTopDir . $BedFilePrefix . "_VarStepWIG/" . $BedFilePrefix;
-
-SeqProcess::beddir_to_vswig($bedtowigfiles, $wigfiles, $BedFilePrefix, $WIGTrackColor);
-
-# Variable Step WIG to FPKM WIG
+# BED to FPKM WIG files
 $commandline = "mkdir " . $ExperimentTopDir . $BedFilePrefix . "_FPKMWIG\n";
 `$commandline`;
 
-my $varstepwigfiles = $ExperimentTopDir . $BedFilePrefix . "_VarStepWIG/" . $BedFilePrefix . "_Chr";
-my $fpkmwigfiles =    $ExperimentTopDir . $BedFilePrefix . "_FPKMWIG/"    . $BedFilePrefix . "_FPKM";
+my $bedtowigfiles = $ExperimentTopDir . $BedFilePrefix .     "_bed/" . $BedFilePrefix . "_Chr";
+my $fpkmwigfiles =  $ExperimentTopDir . $BedFilePrefix . "_FPKMWIG/" . $BedFilePrefix . "_FPKM";
 
-SeqProcess::vswig_to_fpkmwig($varstepwigfiles, $fpkmwigfiles, $FinalReadLength, $ReadCount);
+SeqProcess::vswig_to_fpkmwig($bedtowigfiles, $fpkmwigfiles, $BedFilePrefix, $WIGTrackColor, 		$FinalReadLength, $ReadCount);
 
 # Visualize FPKMWIG
 $commandline = "mkdir " . $ExperimentTopDir . $BedFilePrefix . "_VisFPKMWIG\n";
