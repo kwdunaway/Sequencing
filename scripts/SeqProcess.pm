@@ -4,11 +4,11 @@ use strict; use warnings;
 ###############################################################################################
 # Author: Keith Dunaway & Roy Chu
 # Email: kwdunaway@ucdavis.edu & rgchu@ucdavis.edu
-# Date: 10-30-2012
+# Date: 12-30-2012
 # Module Name: SeqProcess.pm
 #
-# This is a module with sequencing processing commands related to the 
-# chromatin immunoprecipitation sequencing process (ChIP-Seq).
+# This is a module with sequencing processing commands related to aligning and
+# SPKM (Segments Per Kilobase per Million fragments mapped).
 #
 # Jump to each subroutine by searching for the number (e.g. "(6)" ) or name (e.g. "Sort BED File" ).
 # Descriptions of each subroutine can be found above their code.
