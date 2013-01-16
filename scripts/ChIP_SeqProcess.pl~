@@ -10,14 +10,7 @@ use SeqProcess;
 #
 # This script processes the subroutines in SeqProcess.pm.
 #
-# Arguments:
-#   1) Experiment Top Folder path (e.g. Folder/)
-#   2) Raw file folder (make sure they are the only zipped files and the extension is .fq.gz) 
-#   3) Bowtie output prefix (will have 3 files with _Uniq, _Repeat, and _Nonaligned and located in #        Experiment Top Folder path)
-#   4) Bed file prefix
-#   5) Read length
-#   6) Final read length
-#   7) WIG Track Color (in RRR,GGG,BBB format)
+# Arguments: See Below
 #
 ################################################################################################
 
@@ -33,7 +26,8 @@ die "ChIP_SeqProcess.pl needs the following parameters:
     5) Read length
     6) Final read length
     7) WIG Track Color (in RRR,GGG,BBB format)
-" unless @ARGV == 7;
+    8) Read Count (typically 1)
+" unless @ARGV == 8;
 
 my $ExperimentTopDir = shift(@ARGV);
 my $rawfqfolder = shift(@ARGV);
@@ -42,11 +36,11 @@ my $BedFilePrefix = shift(@ARGV);
 my $ReadLength = shift(@ARGV);
 my $FinalReadLength = shift(@ARGV);
 my $WIGTrackColor = shift(@ARGV);
+my $ReadCount = shift(@ARGV);
 
-my $commandline; #inputs for command line
+my $commandline = ""; #inputs for command line
 
 #TODO: Must figure out how to get read count automatically
-my $ReadCount = 1;
 my $addtoPATH = "/home/kwdunaway/tuxedo/bowtie-0.12.7/:/home/kwdunaway/tuxedo/tophat-1.4.1.Linux_x86_64/:/home/kwdunaway/tuxedo/samtools/:/home/kwdunaway/tuxedo/cufflinks-1.3.0.Linux_x86_64/";
 my $mm9path = "/home/kwdunaway/mm9/Mus_musculus_UCSC_mm9/Mus_musculus/UCSC/mm9/Sequence/BowtieIndex/genome";
 
@@ -130,13 +124,15 @@ my $fpkmwigfiles =  $ExperimentTopDir . $BedFilePrefix . "_FPKMWIG/" . $BedFileP
 SeqProcess::vswig_to_fpkmwig($bedtowigfiles, $fpkmwigfiles, $BedFilePrefix, $WIGTrackColor, 		$FinalReadLength, $ReadCount);
 
 # (11) Visualize FPKMWIG
+
+# Create folder named "$BedFilePrefix_VisFPKMWIG" to contain Visualize FPKM WIG files
 $commandline = "mkdir " . $ExperimentTopDir . $BedFilePrefix . "_VisFPKMWIG\n";
 `$commandline`;
 
-# The bed files contain the prefix, $BedFilePrefix_bed/$BedFilePrefix_Chr
-# The new FPKM WIG files contain the prefix, $BedFilePrefix_FPKMWIG/$BedFilePrefix_FPKM
+# The FPKM WIG files contain the prefix, $BedFilePrefix_FPKMWIG/$BedFilePrefix_FPKM_Chr
+# The Visualize FPKMWIG files contain the prefix, $BedFilePrefix_VisFPKMWIG/$BedFilePrefix_VisFPKMWIG_Chr
 my $pre_visfpkmwig = $ExperimentTopDir . $BedFilePrefix .    "_FPKMWIG/" . $BedFilePrefix . 				"_FPKM" . "_Chr";
-my $visfpkmwig =     $ExperimentTopDir . $BedFilePrefix . "_VisFPKMWIG/" . $BedFilePrefix . 				"_VisFPKM";
+my $visfpkmwig =     $ExperimentTopDir . $BedFilePrefix . "_VisFPKMWIG/" . $BedFilePrefix . 				"_VisFPKMWIG";
 
 SeqProcess::visualize_fpkmwig($pre_visfpkmwig, $visfpkmwig, 10, $WIGTrackColor, $BedFilePrefix);
 

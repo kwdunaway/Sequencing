@@ -130,9 +130,9 @@ $commandline = "mkdir " . $ExperimentTopDir . $BedFilePrefix . "_VisFPKMWIG\n";
 `$commandline`;
 
 # The FPKM WIG files contain the prefix, $BedFilePrefix_FPKMWIG/$BedFilePrefix_FPKM_Chr
-# The Visualize FPKM WIG files contain the prefix, $BedFilePrefix_VisFPKMWIG/$BedFilePrefix_VisFPKMWIG/
+# The Visualize FPKMWIG files contain the prefix, $BedFilePrefix_VisFPKMWIG/$BedFilePrefix_VisFPKMWIG_Chr
 my $pre_visfpkmwig = $ExperimentTopDir . $BedFilePrefix .    "_FPKMWIG/" . $BedFilePrefix . 				"_FPKM" . "_Chr";
-my $visfpkmwig =     $ExperimentTopDir . $BedFilePrefix . "_VisFPKMWIG/" . $BedFilePrefix . 				"_VisFPKMWIG/";
+my $visfpkmwig =     $ExperimentTopDir . $BedFilePrefix . "_VisFPKMWIG/" . $BedFilePrefix . 				"_VisFPKMWIG";
 
 SeqProcess::visualize_fpkmwig($pre_visfpkmwig, $visfpkmwig, 10, $WIGTrackColor, $BedFilePrefix);
 
