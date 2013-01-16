@@ -1,0 +1,16 @@
+#!/usr/bin/perl
+use strict; use warnings;
+
+###########################################################################
+#             (16) Determine Read Length in fastq.gz files                #
+#  Input: Raw file folder (only zipped files and the extension is .fq.gz) #
+# Output: Returns: Filtered and Combined into one .fq file                #
+###########################################################################
+
+sub fpkm_from_gtf_fpkmwig
+{
+	# Input
+	my ($inputFPKMprefix, $GTFfilename, $OutputName, $ColumnName) = @_;
+
+	print "Scoring FPKM from $inputFPKMprefix FPKM WIG files and $GTFfilename GTF file\n";
+}

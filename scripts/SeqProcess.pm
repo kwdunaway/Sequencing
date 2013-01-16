@@ -407,6 +407,8 @@ sub sort_bed
 #                                                                         #
 #  Input: 1) Sorted BED File (with 6 fields)                              #
 #         2) Maximum Duplicate Reads allowed (1 for no duplicates)        #
+#         3) Total Number of Duplicate Reads Deleted                      #
+#         4) Total Number of Duplicate Read Positions                     #
 # Output: BED File cleaned of duplicates (replaces input file)            #
 ###########################################################################
 
@@ -466,6 +468,8 @@ sub eliminate_bed_dups
 
 	`rm $bedfile`;
 	`mv $temp $bedfile`;
+
+	return ($TotalDupReads, $TotalDupPositions);
 }
 
 ########################################################################################

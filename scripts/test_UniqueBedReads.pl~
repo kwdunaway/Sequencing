@@ -2,11 +2,14 @@
 use strict; use warnings;
 
 ###########################################################################
-#                 Eliminates Duplicate Reads in BED Files                 #
+#               (7) Eliminate Duplicate Reads in BED Files                #
 # Checks BED files for duplicate reads and deletes the duplicates         #
 #                                                                         #
-#  Input: Sorted BED File                                                 #
+#  Input: 1) Sorted BED File (with 6 fields)                              #
+#         2) Maximum Duplicate Reads allowed (1 for no duplicates)        #
 # Output: BED File cleaned of duplicates (replaces input file)            #
+#         Returns: 1) Total Number of Duplicate Reads Deleted             #
+#                  2) Total Number of Duplicate Read Positions            #
 ###########################################################################
 
 
@@ -25,7 +28,9 @@ use strict; use warnings;
 	my $linenum = 1; # Record line number(according to output file)
 	# Check if lines are the same; if so, duplicates
 	my %data; # Will hold data of every line for checking
-	my $DupCount = 1; #Checks for current number of the same read printed to output
+	my $DupCount = 1; # Checks for current number of the same read printed to output
+	my $TotalDupReads = 0; # Total duplicate reads deleted (exceeded max allowed dups per read)
+	my $TotalDupPositions = 0; # Total number
 
 	##################################################
 	#            Checking for Duplicates             #
@@ -46,7 +51,7 @@ use strict; use warnings;
 		# If current line does not equal previous line, print to output
 		if ($data{$linenum-1} ne $data{$linenum})
 		{
-			print OUT $line[0], "\t", $line[1], "\t", $line[2], "\t", $line[3], "\t", 				$line[4], "\t", $line[5];
+			print OUT $line[0], "\t", $line[1], "\t", $line[2], "\t", $line[3], "\t", 					$line[4], "\t", $line[5];
 			$DupCount = 1;
 			$linenum++; 
 		}
@@ -56,6 +61,10 @@ use strict; use warnings;
 			$DupCount++;
 			$linenum++; 
 		}
+		elsif ($DupCount >= $MaxDupReads)
+		{
+			
+		}
 	}
 
 	close(IN);
@@ -63,6 +72,8 @@ use strict; use warnings;
 
 	`rm $bedfile`;
 	`mv $temp $bedfile`;
+
+	
 		
 	
 
