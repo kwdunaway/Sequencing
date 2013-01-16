@@ -1022,7 +1022,7 @@ sub rpkm_from_bed
 		my %StartHash;  #StartHash{position}[genename1,genename2,ect]
 		foreach my $gene_name (keys %{$GTFHash{$chrom_name}})
 		{ 
-			push($StartHash{$GTFHash{$chrom_name}{$gene_name}[0]},$gene_name);
+			push(@{$StartHash{$GTFHash{$chrom_name}{$gene_name}[0]}},$gene_name);
 		}
 		
 		print "Analyzing Chromosome $chr \n";

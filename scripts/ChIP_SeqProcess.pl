@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+BEGIN {push @INC, "/home/kwdunaway/perl_script";}
 use strict; use warnings;
 use SeqProcess;
 
