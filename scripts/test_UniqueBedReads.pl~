@@ -11,7 +11,7 @@ use strict; use warnings;
 
 
 	# Input
-	my ($bedfile) = @ARGV;
+	my ($bedfile, $MaxDupReads) = @ARGV;
 	
 	##################################################
 	#     Global Variables and I/O Initiation        #
@@ -25,6 +25,7 @@ use strict; use warnings;
 	my $linenum = 1; # Record line number(according to output file)
 	# Check if lines are the same; if so, duplicates
 	my %data; # Will hold data of every line for checking
+	my $DupCount = 1; #Checks for current number of the same read printed to output
 
 	##################################################
 	#            Checking for Duplicates             #
@@ -46,7 +47,13 @@ use strict; use warnings;
 		if ($data{$linenum-1} ne $data{$linenum})
 		{
 			print OUT $line[0], "\t", $line[1], "\t", $line[2], "\t", $line[3], "\t", 				$line[4], "\t", $line[5];
-
+			$DupCount = 1;
+			$linenum++; 
+		}
+		elsif ($DupCount < $MaxDupReads)
+		{
+			print OUT $line[0], "\t", $line[1], "\t", $line[2], "\t", $line[3], "\t", 					$line[4], "\t", $line[5];
+			$DupCount++;
 			$linenum++; 
 		}
 	}

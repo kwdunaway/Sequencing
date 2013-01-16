@@ -150,6 +150,7 @@ sub separate_repeats
 #         4) Chromosome array number                                      #
 #         5) Position array number                                        #
 #         6) Strand array number                                          #
+#         7) Maximum Duplicate Reads (1 for no duplicates)                #
 #                                                                         #
 # Output: Creates directory containing:                                   #
 #           1) BED files for each chromosome                              #
@@ -161,7 +162,7 @@ sub separate_repeats
 sub elandext_to_bed 
 {
 	# Input
-	my ($infile, $outfile, $readlength, $chr, $pos, $strand) = @_;
+	my ($infile, $outfile, $readlength, $chr, $pos, $strand, $MaxDupReads) = @_;
 
 	# Makes Output Directory
 	if (! -d $outfile) 
@@ -365,7 +366,7 @@ sub elandext_to_bed
 		else
 		{
 			sort_bed($bedfile);
-			eliminate_bed_dups($bedfile);
+			eliminate_bed_dups($bedfile, $MaxDupReads);
 		}
 	}
 }
@@ -389,14 +390,15 @@ sub sort_bed
 #               (7) Eliminate Duplicate Reads in BED Files                #
 # Checks BED files for duplicate reads and deletes the duplicates         #
 #                                                                         #
-#  Input: Sorted BED File                                                 #
+#  Input: 1) Sorted BED File (with 6 fields)                              #
+#         2) Maximum Duplicate Reads allowed (1 for no duplicates)        #
 # Output: BED File cleaned of duplicates (replaces input file)            #
 ###########################################################################
 
 sub eliminate_bed_dups
 {
 	# Input
-	my ($bedfile) = @_;
+	my ($bedfile, $MaxDupReads) = @_;
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
@@ -410,6 +412,7 @@ sub eliminate_bed_dups
 	my $linenum = 1; # Record line number(according to output file)
 	# Check if lines are the same; if so, duplicates
 	my %data; # Will hold data of every line for checking
+	my $DupCount = 1; #Checks for current number of the same read printed to output
 
 	##################################################
 	#            Checking for Duplicates             #
@@ -431,7 +434,13 @@ sub eliminate_bed_dups
 		if ($data{$linenum-1} ne $data{$linenum})
 		{
 			print OUT $line[0], "\t", $line[1], "\t", $line[2], "\t", $line[3], "\t", 				$line[4], "\t", $line[5];
-
+			$DupCount = 1;
+			$linenum++; 
+		}
+		elsif ($DupCount < $MaxDupReads)
+		{
+			print OUT $line[0], "\t", $line[1], "\t", $line[2], "\t", $line[3], "\t", 					$line[4], "\t", $line[5];
+			$DupCount++;
 			$linenum++; 
 		}
 	}
