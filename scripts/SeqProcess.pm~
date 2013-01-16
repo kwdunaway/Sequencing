@@ -46,9 +46,8 @@ sub add_path
 {
 	my ($addtoPATH) = @_;
 
-	`#!/bin/bash\n\n`;
-	`PATH=\$PATH:$addtoPATH\n`;
-	`export PATH\n\n`;
+	print "\nAdding $addtoPATH to PATH\n\n";
+	$ENV{'PATH'} = $ENV{'PATH'} . ":" . $addtoPATH;
 }
 
 ###########################################################################
@@ -62,6 +61,7 @@ sub filter_zip
 	my ($rawfqfolder) = @_;
 	my $filtered_fastq = $rawfqfolder . "filtered.fq";
 
+	print "Filtering $rawfqfolder files and outputting to $filtered_fastq\n";
 	`gunzip -c $rawfqfolder*.gz | grep -A 3 '^@.* [^:]*:N:[^:]*:' |   grep -v \"^--\$\" >  $filtered_fastq\n\n`;
 
 	return $filtered_fastq;
@@ -81,12 +81,13 @@ sub filter_zip
 sub run_bowtie 
 {
 	my ($ExperimentTopDir, $BowtiePrefix, $mm9path, $filtered_fastq) = @_;
-	
+	print "Making $ExperimentTopDir directory in current directory\n";
 	`mkdir $ExperimentTopDir\n`;
 
 	my $nonalignedreadsfile = $ExperimentTopDir . $BowtiePrefix . "_NonAligned.fq";
 	my $alignedpreseparationfile = $ExperimentTopDir . $BowtiePrefix . "_alignedpreseparation.txt";
 
+	print "Running Bowtie, separating aligned reads to $alignedpreseparationfile and non-aligned reads to $nonalignedreadsfile\n";
 	`bowtie -p 4 -M 1 -k 1 --chunkmbs 256 --strata --best --un $nonalignedreadsfile $mm9path $filtered_fastq $alignedpreseparationfile\n\n`;
 
 	return ($nonalignedreadsfile, $alignedpreseparationfile);
@@ -109,6 +110,8 @@ sub separate_repeats
 	my $uniqalignedreadsfile = $ExperimentTopDir . $BowtiePrefix . "_Uniq.txt";
 	my $repalignedreadsfile = $ExperimentTopDir . $BowtiePrefix . "_Repeat.txt";
 
+        print "Separating aligned reads between unique reads to $uniqalignedreadsfile and repeat reads to $repalignedreadsfile\n";
+
 	open(IN, "<$alignedpreseparationfile") or die "cannot open $alignedpreseparationfile infile";
 	open(UNIQOUT, ">$uniqalignedreadsfile") or die "cannot open $uniqalignedreadsfile outfile";
 	open(REPOUT, ">$repalignedreadsfile") or die "cannot open $repalignedreadsfile outfile";
@@ -127,6 +130,7 @@ sub separate_repeats
 		}
 	}
 
+        print "Finished Separating\n";
 
 	close IN;
 	close UNIQOUT;
@@ -161,10 +165,12 @@ sub separate_repeats
 
 sub elandext_to_bed 
 {
+	print "\nBeginning conversion of Eland Extended format to BED format\n";
 	# Input
 	my ($infile, $outfile, $readlength, $chr, $pos, $strand, $MaxDupReads) = @_;
 
 	# Makes Output Directory
+	print "Making $outfile directory\n";
 	if (! -d $outfile) 
 	{ 
 		`mkdir $outfile`; #creates dir if one doesn't exist
@@ -212,6 +218,7 @@ sub elandext_to_bed
 	#   *Text Files*  -> Stats = [28], Unknown = [29]                          #
 	############################################################################
 
+	print "Creating output files in $outfile\n";
 	for(my $n = 0; $n < 30; $n++)
 	{
 		if($n > 22)
@@ -257,6 +264,7 @@ sub elandext_to_bed
 	#           Processing data into each chromosome output file               #
 	############################################################################
 
+	print "Processing data into each chromosome output file in BED format\n";
 	while (<IN>)
 	{
 		chomp;
@@ -302,10 +310,13 @@ sub elandext_to_bed
 			$Unknowncount = $Unknowncount + 1;
   		}
 	}
+	print "Finished outputting data to each BED file\n";
 
 	############################################################################
 	#                  Printing statistics to Stats Outfile                    #
 	############################################################################
+
+	print "Printing statistics to ", $chr_out[28], "\n";
 
 	my $weirdcount = $totalcount - $QCcount - $NMcount - $NonUniqcount - $ChrMapcount[0];
 
@@ -342,6 +353,7 @@ sub elandext_to_bed
 	close(IN);
 
 	# Gzip Non-mappable and non-unique reads outfiles
+	print "Zipping non-mappable and non-unique reads output files\n";
 	$commandinput = "gzip " . $outfile . "/" . $outfile . "_NM.fq";
 	`$commandinput`;
 	$commandinput = "gzip " . $outfile . "/" . $outfile . "_NonUnique.fq";
@@ -369,6 +381,8 @@ sub elandext_to_bed
 			eliminate_bed_dups($bedfile, $MaxDupReads);
 		}
 	}
+
+	print "Finished conversion of Eland Extended to BED format\n";
 }
 
 ###########################################################################
@@ -379,6 +393,7 @@ sub elandext_to_bed
 
 sub sort_bed
 {
+	print "Sorting BED files\n";
 	my ($bedfile) = @_;
 	my $temp = $bedfile . "_sorted";
 	`sort -n +1 -2 $bedfile > $temp`;
@@ -397,6 +412,7 @@ sub sort_bed
 
 sub eliminate_bed_dups
 {
+	print "Eliminating duplicates based on maximum allowed duplicate reads\n";
 	# Input
 	my ($bedfile, $MaxDupReads) = @_;
 
@@ -469,6 +485,8 @@ sub extend_bed_read_length
 	# Input
 	my ($inputbedprefix, $outputbedprefix, $readlengthextension) = @_;
 
+	print "Beginning extension of read lengths in BED files by $readlengthextension\n";
+
 	my @Chr; 	# array that contains all the the names of the mouse chromosomes
 	for (my $n = 1; $n< 20; $n++)
 	{
@@ -486,7 +504,7 @@ sub extend_bed_read_length
 		my $outfile = $outputbedprefix . "_Chr" . $chr . ".bed";
 		open(OUT, ">$outfile") or die "cannot open $outfile outfile";
 
-		print "Processing $inputfile \n";
+		print "Extending read lengths in $inputfile\n";
 
 		while(<IN>)
 		{
@@ -512,6 +530,7 @@ sub extend_bed_read_length
 		close(IN);
 		close(OUT);
 	}
+	print "Finished read length extensions\n";
 }
 
 ########################################################################################
@@ -531,6 +550,8 @@ sub change_bed_read_length
 	# Input
 	my ($inputbedprefix, $outputbedprefix, $readlengthextension) = @_;
 
+	print "Changing read lengths in BED files to $readlengthextension\n";
+
 	my @Chr;	# array that contains all the the names of the mouse chromosomes
 	for (my $n = 1; $n< 20; $n++)
 	{
@@ -548,7 +569,7 @@ sub change_bed_read_length
 		my $outfile = $outputbedprefix . "_Chr" . $chr . ".bed";
 		open(OUT, ">$outfile") or die "cannot open $outfile outfile";
 
-		print "Processing $inputfile \n";
+		print "Changing read lengths in $inputfile\n";
 
 		while(<IN>)
 		{
@@ -574,6 +595,7 @@ sub change_bed_read_length
 		close(IN);
 		close(OUT);
 	}
+	print "Finished read length change\n";
 }
 
 ###########################################################################
@@ -711,7 +733,7 @@ sub beddir_to_vswig
     
 		close IN;
 		close OUT;
-		print "Finished with Chromosome $Chr[0] \n";
+		print "Finished with Chromosome", $Chr[0] ,"\n";
 		shift(@Chr);
 	}
 
@@ -734,6 +756,8 @@ sub vswig_to_fpkmwig
 {
 	# Input
 	my ($inputWIGprefix, $outprefix, $readlength, $readcount) = @_;
+
+	print "Converting $inputWIGprefix Variable Step WIG files to $outprefix FPKM WIG files\n";
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
@@ -778,7 +802,7 @@ sub vswig_to_fpkmwig
 		close OUT;
 		close INWIG;
 	}
-	
+	print "Completed conversion of $inputWIGprefix Variable Step WIG to $outprefix FPKM WIG\n";
 }
 
 ###########################################################################
@@ -834,6 +858,8 @@ sub visualize_fpkmwig
 {
 	# Input
 	my ($inputprefix, $outprefix, $stepsize, $color, $tracknameprefix) = @_;
+
+	print "Visualizing $inputprefix FPKM WIG files\n";
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
@@ -913,6 +939,7 @@ sub visualize_fpkmwig
 		my $commandline = "gzip $outfile";
 		`$commandline`;
 	}
+	print "Finished Visualizing $inputprefix FPKM WIG files\n";
 }
 
 ###########################################################################
@@ -930,8 +957,11 @@ sub visualize_fpkmwig
 
 sub rpkm_from_bed
 {
+	print "Loading GTFHash from GTF file\n";
 	# Input
 	my ($inputBEDprefix, $GTFfilename, $OutputName, $TotalReads) = @_;
+
+	print "Scoring RPKM from $inputBEDprefix BED files and $GTFfilename GTF file\n";
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
@@ -962,7 +992,7 @@ sub rpkm_from_bed
 	# 
 	# Note: count will be used later in the script but for now will be 0.
 
-	print "Loading GTFHash from GTF file.\n";
+	print "Loading GTFHash from GTF file\n";
 	my %GTFHash;
 	while(<GTF>)
 	{
@@ -1027,7 +1057,7 @@ sub rpkm_from_bed
 		open(IN, "<$inputfile") or die "cannot open $inputfile IN infile";
 
 		#Makes a StartHash for the chromosome
-		print "Loading Chr$chr start positions into StartHash.\n";
+		print "Loading Chr$chr start positions into StartHash\n";
 		my %StartHash;  #StartHash{position}[genename1,genename2,ect]
 		foreach my $gene_name (keys %{$GTFHash{$chrom_name}})
 		{ 
@@ -1065,6 +1095,7 @@ sub rpkm_from_bed
 	close IN;
 	close GTF;
 	close OUT;
+	print "Finished with $OutputName RPKM file\n";
 }
 
 ###########################################################################
@@ -1084,6 +1115,8 @@ sub fpkm_from_gtf_fpkmwig
 {
 	# Input
 	my ($inputFPKMprefix, $GTFfilename, $OutputName, $ColumnName) = @_;
+
+	print "Scoring FPKM from $inputFPKMprefix FPKM WIG files and $GTFfilename GTF file\n";
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
@@ -1303,7 +1336,7 @@ sub fpkm_from_gtf_fpkmwig
 		}	
 	}
 	close OUT;
-
+	print "Finished with $OutputName FPKM file\n";
 }
 
 1;

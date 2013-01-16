@@ -61,10 +61,11 @@ SeqProcess::add_path($addtoPATH);
 # (2) Unzip zipped files, filter them, and combine into one .fq file
 my $filtered_fastq = SeqProcess::filter_zip($rawfqfolder);
 
-# (3) Run Bowtie (Separates reads between aligned and non-aligned)
+# (3) Make folder for experiment and run Bowtie (separates reads between aligned and non-aligned)
 my ($nonalignedreadsfile, $alignedpreseparationfile) = SeqProcess::run_bowtie($ExperimentTopDir, $FilePrefix, $mm9path, $filtered_fastq);
 
 # (4) Remove made files
+print "Removing $filtered_fastq\n";
 `rm $filtered_fastq`;
 
 
@@ -85,12 +86,14 @@ my ($nonalignedreadsfile, $alignedpreseparationfile) = SeqProcess::run_bowtie($E
 my ($uniqalignedreadsfile, $repalignedreadsfile) = SeqProcess::separate_repeats($ExperimentTopDir, $FilePrefix, $alignedpreseparationfile);
 
 # (6) Zip non-aligned reads and repeat reads files 
+print "Zipping non-aligned reads and repeat reads files\n";
 `gzip $nonalignedreadsfile`;
 `gzip $repalignedreadsfile`;
 
 
-# (7) Make BED files from the Unique reads bowtie output and zip the Unique reads file
+# (7) Make BED files from the unique reads bowtie output and zip the unique reads file
 SeqProcess::elandext_to_bed($uniqalignedreadsfile, $FilePrefix, $ReadLength, 2, 3, 1, $MaxDupReads);
+print "Zipping unique reads files\n";
 `gzip $uniqalignedreadsfile`;
 
 # (8) Change BED file read length (Choose the final read length)
@@ -107,6 +110,7 @@ my $finallengthbedfiles = $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefi
 SeqProcess::change_bed_read_length($origlengthbedfiles, $finallengthbedfiles, $FinalReadLength);
 
 # (9) Remove Unextended Bed Folder
+print "Removing unextended bed files\n";
 `rm -R $FilePrefix`;
 
 
