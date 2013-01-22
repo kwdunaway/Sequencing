@@ -378,7 +378,7 @@ sub elandext_to_bed
 		else
 		{
 			sort_bed($bedfile);
-			eliminate_bed_dups($bedfile, $MaxDupReads);
+			#eliminate_bed_dups($bedfile, $MaxDupReads);
 		}
 	}
 
