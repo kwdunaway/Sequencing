@@ -30,7 +30,7 @@ use strict; use warnings;
 	my %data; # Will hold data of every line for checking
 	my $DupCount = 1; # Checks for current number of the same read printed to output
 	my $TotalDupReads = 0; # Total duplicate reads deleted (exceeded max allowed dups per read)
-	my $TotalDupPositions = 0; # Total number
+	my $TotalDupPositions = 0; # Total number of unique reads with duplicates
 
 	##################################################
 	#            Checking for Duplicates             #
@@ -63,15 +63,22 @@ use strict; use warnings;
 		}
 		elsif ($DupCount >= $MaxDupReads)
 		{
-			
+			$TotalDupReads++;
+			$DupCount++;
+			if ($DupCount == $MaxDupReads)
+			{
+				$TotalDupPositions++;
+			}
 		}
 	}
+
+	print $TotalDupReads, " ", $TotalDupPositions, "\n";
 
 	close(IN);
 	close(OUT);
 
-	`rm $bedfile`;
-	`mv $temp $bedfile`;
+	#`rm $bedfile`;
+	#`mv $temp $bedfile`;
 
 	
 		
