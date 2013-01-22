@@ -110,6 +110,7 @@ my $finallengthbedfiles = $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefi
 SeqProcess::change_bed_read_length($origlengthbedfiles, $finallengthbedfiles, $FinalReadLength);
 
 # (9) Remove Unextended Bed Folder
+print "Removing unextended bed files\n";
 `rm -R $FilePrefix`;
 
 

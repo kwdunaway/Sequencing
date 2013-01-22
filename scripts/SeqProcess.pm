@@ -381,7 +381,7 @@ sub elandext_to_bed
 		else
 		{
 			sort_bed($bedfile);
-			eliminate_bed_dups($bedfile, $MaxDupReads);
+			#eliminate_bed_dups($bedfile, $MaxDupReads);
 		}
 	}
 
@@ -410,9 +410,9 @@ sub sort_bed
 #                                                                         #
 #  Input: 1) Sorted BED File (with 6 fields)                              #
 #         2) Maximum Duplicate Reads allowed (1 for no duplicates)        #
-#         3) Total Number of Duplicate Reads Deleted                      #
-#         4) Total Number of Duplicate Read Positions                     #
 # Output: BED File cleaned of duplicates (replaces input file)            #
+#         Returns: 1) Total Number of Duplicate Reads Deleted             #
+#                  2) Total Number of Duplicate Read Positions            #
 ###########################################################################
 
 sub eliminate_bed_dups
@@ -434,6 +434,8 @@ sub eliminate_bed_dups
 	# Check if lines are the same; if so, duplicates
 	my %data; # Will hold data of every line for checking
 	my $DupCount = 1; #Checks for current number of the same read printed to output
+	my $TotalDupReads = 0; # Total duplicate reads deleted (exceeded max allowed dups per read)
+	my $TotalDupPositions = 0; # Total number of unique reads with duplicates
 
 	##################################################
 	#            Checking for Duplicates             #
@@ -463,6 +465,15 @@ sub eliminate_bed_dups
 			print OUT $line[0], "\t", $line[1], "\t", $line[2], "\t", $line[3], "\t", 					$line[4], "\t", $line[5];
 			$DupCount++;
 			$linenum++; 
+		}
+		elsif ($DupCount >= $MaxDupReads)
+		{
+			$TotalDupReads++;
+			if ($DupCount == $MaxDupReads)
+			{
+				$TotalDupPositions++;
+			}
+			$DupCount++;
 		}
 	}
 

@@ -63,15 +63,22 @@ use strict; use warnings;
 		}
 		elsif ($DupCount >= $MaxDupReads)
 		{
-			
+			$TotalDupReads++;
+			if ($DupCount == $MaxDupReads)
+			{
+				$TotalDupPositions++;
+			}
+			$DupCount++;
 		}
 	}
+
+	print $TotalDupReads, " ", $TotalDupPositions, "\n";
 
 	close(IN);
 	close(OUT);
 
-	`rm $bedfile`;
-	`mv $temp $bedfile`;
+	#`rm $bedfile`;
+	#`mv $temp $bedfile`;
 
 	
 		
