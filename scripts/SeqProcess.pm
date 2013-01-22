@@ -479,6 +479,8 @@ sub eliminate_bed_dups
 
 	`rm $bedfile`;
 	`mv $temp $bedfile`;
+	
+	print "Finished removing duplicate reads from BED files\n";
 
 	return ($TotalDupReads, $TotalDupPositions);
 }
