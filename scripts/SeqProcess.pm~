@@ -149,7 +149,7 @@ sub separate_repeats
 #  be used to analyze the data.                                           #
 #                                                                         #
 #  Input: 1) Input file name                                              #
-#         2) Output file name                                             #
+#         2) Output dir name                                              #
 #         3) Read length                                                  #
 #         4) Chromosome array number                                      #
 #         5) Position array number                                        #
@@ -167,14 +167,17 @@ sub elandext_to_bed
 {
 	print "\nBeginning conversion of Eland Extended format to BED format\n";
 	# Input
-	my ($infile, $outfile, $readlength, $chr, $pos, $strand, $MaxDupReads) = @_;
+	my ($infile, $ExperimentTopDir, $FilePrefix, $basereadlength, $finalreadlength, $chr, $pos, $strand, $MaxDupReads) = @_;
+
+	my outdir = $ExperimentTopDir . "/" . $FilePrefix . "_bed";
+	my outprefix = $FilePrefix;
 
 	# Makes Output Directory
-	print "Making $outfile directory\n";
-	if (! -d $outfile) 
+	print "Making $outdir directory\n";
+	if (! -d $outdir) 
 	{ 
-		`mkdir $outfile`; #creates dir if one doesn't exist
-		if (! -d $outfile) { die "directory ($outfile) does not exist"} 
+		`mkdir $outdir`; #creates dir if one doesn't exist
+		if (! -d $outdir) { die "directory ($outdir) does not exist"} 
 	}
 
 	##################################################
@@ -218,43 +221,43 @@ sub elandext_to_bed
 	#   *Text Files*  -> Stats = [28], Unknown = [29]                          #
 	############################################################################
 
-	print "Creating output files in $outfile\n";
+	print "Creating output files in $outdir\n";
 	for(my $n = 0; $n < 30; $n++)
 	{
 		if($n > 22)
 		{
 			if($n == 23)
 			{
-				$filename = $outfile . "/" . $outfile . "_chrX.bed";
+				$filename = $outdir . "/" . $outprefix . "_chrX.bed";
 			}
 			if($n == 24)
 			{
-				$filename = $outfile . "/" . $outfile . "_chrY.bed";
+				$filename = $outdir . "/" . $outprefix . "_chrY.bed";
 			}
 			if($n == 25)
 			{
-				$filename = $outfile . "/" . $outfile . "_chrM.bed";
+				$filename = $outdir . "/" . $outprefix . "_chrM.bed";
 			}
 			if($n == 26)
 			{
-				$filename = $outfile . "/" . $outfile . "_NM.fq"; 
+				$filename = $outdir . "/" . $outprefix . "_NM.fq"; 
 			}
 			if($n == 27)
 			{
-				$filename = $outfile . "/" . $outfile . "_NonUnique.fq";
+				$filename = $outdir . "/" . $outprefix . "_NonUnique.fq";
 			}
 			if($n == 28)
 			{
-				$filename = $outfile . "/" . "Stats_" . $outfile . ".txt";
+				$filename = $ExperimentTopDir . "/" . "Stats_" . $outprefix . ".txt";
 			}
 			if($n == 29)
 			{
-				$filename = $outfile . "/" . "Unknown_" . $outfile . ".txt";
+				$filename = $outdir . "/" . "Unknown_" . $outprefix . ".txt";
 			}
 		}
 		else
 		{
-			$filename = $outfile . "/" . $outfile . "_chr" . ($n + 1) . ".bed";
+			$filename = $outdir . "/" . $outprefix . "_chr" . ($n + 1) . ".bed";
 		}
 		open($chr_out[$n], ">$filename") or die "cannot open $filename outfile";
 	}
@@ -297,7 +300,7 @@ sub elandext_to_bed
 				{ 	
 					$chr_out[$chromosome-1]->print("chr", $chr_value, "\t" , 
 								$array[$pos] , "\t" , 
-								$array[$pos]+$readlength, 									"\t", $outfile , "\t", "0", "\t" , 
+								$array[$pos]+$readlength, "\t", $outfile , "\t", "0", "\t" , 
 								$array[$strand] , "\n");
 					$ChrMapcount[$chromosome]++;
 				}
@@ -479,6 +482,8 @@ sub eliminate_bed_dups
 
 	`rm $bedfile`;
 	`mv $temp $bedfile`;
+	
+	print "Finished removing duplicate reads from BED files\n";
 
 	return ($TotalDupReads, $TotalDupPositions);
 }
