@@ -50,16 +50,19 @@ my $mm9path = "/home/kwdunaway/mm9/Mus_musculus_UCSC_mm9/Mus_musculus/UCSC/mm9/S
 #                                                                         #
 # (1) Pathing                                                             #
 # (2) Prepare temp files for bowtie                                       #
+#   (2.5) Determine Read Length                                           #
 # (3) Bowtie (Separates reads between aligned and non-aligned)            #
 # (4) Remove temp files                                                   #
 ###########################################################################
-
 
 # (1) Header and path modifier
 SeqProcess::add_path($addtoPATH);
 
 # (2) Unzip zipped files, filter them, and combine into one .fq file
 my $filtered_fastq = SeqProcess::filter_zip($rawfqfolder);
+
+#   (2.5) Determine Read Length from Fastq File
+
 
 # (3) Make folder for experiment and run Bowtie (separates reads between aligned and non-aligned)
 my ($nonalignedreadsfile, $alignedpreseparationfile) = SeqProcess::run_bowtie($ExperimentTopDir, $FilePrefix, $mm9path, $filtered_fastq);

@@ -14,6 +14,9 @@ use strict; use warnings;
 # Descriptions of each subroutine can be found above their code.
 #
 # Subroutines: 
+#              (0) Determine Read Length from fastq.gz File
+#                (0.1) Determine Read Count from Fastq File
+#                (0.2) Determine Read Count from Fasta/Eland Extended File
 #              (1) Header and Path Modifier
 #
 #              -Bowtie Related-
@@ -37,6 +40,53 @@ use strict; use warnings;
 #             (15) FPKM from GTF and FPKMWIG
 #
 ################################################################################################
+
+###########################################################################
+#             (0) Determine Read Length from Fastq.gz File                #
+###########################################################################
+
+sub fastqgz_readlength 
+{
+	my ($fastqgzfile) = @_;
+	my $readlength = `gunzip -c $fastqgzfile | head -n 2 | tail -n 1 | tr -d '\n'| wc -m | tr -d '\n'`;
+
+	return $readlength;
+}
+
+###########################################################################
+#             (0.1) Determine Read Length from Fastq File                 #
+###########################################################################
+
+sub fastq_readlength 
+{
+	my ($fastqfile) = @_;
+	my $readlength = `head -n 2 | tail -n 1 | tr -d '\n'| wc -m | tr -d '\n'`;
+
+	return $readlength;
+}
+
+###########################################################################
+#               (0.2) Determine Read Count from Fastq File                #
+###########################################################################
+
+sub fastq_readcount
+{
+	my ($fastqfile) = @_;
+	my $readcount = `wc -l $fastqfile | tr -d '\n'`;
+	die "Fastq file format error" if $readcount % 4 != 0;
+	return $readcount/4;
+}
+
+###########################################################################
+#        (0.3) Determine Read Count from Fasta/Eland Extended File        #
+###########################################################################
+
+sub fasta_readcount
+{
+	my ($fastafile) = @_;
+	my $readcount = `wc -l $fastafile`;
+	return $readcount;
+}
 
 ###########################################################################
 #                     (1) Header and Path Modifier                        #
@@ -169,8 +219,8 @@ sub elandext_to_bed
 	# Input
 	my ($infile, $ExperimentTopDir, $FilePrefix, $basereadlength, $finalreadlength, $chr, $pos, $strand, $MaxDupReads) = @_;
 
-	my outdir = $ExperimentTopDir . "/" . $FilePrefix . "_bed";
-	my outprefix = $FilePrefix;
+	my $outdir = $ExperimentTopDir . "/" . $FilePrefix . "_bed";
+	my $outprefix = $FilePrefix;
 
 	# Makes Output Directory
 	print "Making $outdir directory\n";
