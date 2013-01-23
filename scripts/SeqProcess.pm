@@ -220,7 +220,8 @@ sub elandext_to_bed
 	# Input
 	my ($infile, $ExperimentTopDir, $FilePrefix, $basereadlength, $finalreadlength, $chr, $pos, $strand, $MaxDupReads) = @_;
 
-	my $outdir = $ExperimentTopDir . $FilePrefix . "_bed";
+	my $outdir = $ExperimentTopDir . $FilePrefix . "_bed"
+;
 	my $outprefix = $FilePrefix;
 
 	# Makes Output Directory

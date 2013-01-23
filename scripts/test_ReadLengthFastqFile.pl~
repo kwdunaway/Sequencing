@@ -7,11 +7,7 @@ use strict; use warnings;
 
 	# Input
 	my ($fastqgzfile) = @ARGV;
-
-die "Experiment Top Folder name should contain a '/' at the end.\n" unless $fastqgzfile =~ m/\/$/;
-
-__END__
-	
+die "Error: 2) \n" unless $MaxDupReads > 0;
 	my $readlength = `gunzip -c $fastqgzfile | head -n 2 | tail -n 1 | tr -d '\n'| wc -m | tr -d '\n'`;
 
 	print $readlength, "\n";
