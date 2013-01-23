@@ -7,7 +7,10 @@ use strict; use warnings;
 
 	# Input
 	my ($fastqgzfile) = @ARGV;
-die "Error: 2) \n" unless $MaxDupReads > 0;
+$fastqgzfile = $fastqgzfile . "\/" unless $fastqgzfile =~ m/\/$/;
+print $fastqgzfile, "\n";
+
+__END__
 	my $readlength = `gunzip -c $fastqgzfile | head -n 2 | tail -n 1 | tr -d '\n'| wc -m | tr -d '\n'`;
 
 	print $readlength, "\n";

@@ -35,10 +35,12 @@ my $FinalReadLength = shift(@ARGV);
 my $WIGTrackColor = shift(@ARGV);
 my $MaxDupReads = shift(@ARGV);
 
-#Error Checking
-die "Error: 1) Experiment Top Folder name should contain a '/' at the end.\n" unless $ExperimentTopDir =~ m/\/$/;
-die "Error: 2) Raw File Folder name should contain a '/' at the end.\n" unless $rawfqfolder =~ m/\/$/;
+# Error Checking
 die "Error: 6) Maximum duplicate reads should be at least 1.\n" unless $MaxDupReads > 0;
+
+# Adjusting Folder Names
+$ExperimentTopDir = $ExperimentTopDir . "\/" unless $ExperimentTopDir =~ m/\/$/;
+$rawfqfolder = $rawfqfolder . "\/" unless $rawfqfolder =~ m/\/$/;
 
 my $commandline = ""; #inputs for command line
 
