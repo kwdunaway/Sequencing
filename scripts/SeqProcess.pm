@@ -243,6 +243,7 @@ sub elandext_to_bed
 		my $chrom = $array[$chr];
 		my $readstrand = $array[$strand];
 		$totalcount++; # Add to total mapped reads
+
 		#If outputfile has not been for the chromosome, make it
 		if(! exists $Count(total)){
 			$Count($chrom) = 0;
@@ -251,6 +252,7 @@ sub elandext_to_bed
 		}
 		my $printfile = $Files($chrom);
 		$Count($chrom)++;
+
 		if($readstrand == "+"){
 			print {$Files($chrom)} $chrom , "\t" , $array[$pos] , "\t" , $array[$pos] + $finalreadlength, "\t", $outprefix , "\t", "0", "\t" , $readstrand , "\n";
 		}
@@ -258,7 +260,7 @@ sub elandext_to_bed
 			print {$Files($chrom)} $chrom , "\t" , $array[$pos] - $minusstrandlength, "\t" , $array[$pos] + $basereadlength, "\t", $outprefix , "\t", "0", "\t" , $readstrand , "\n";
 		}
 		else {die "Strand is not + nor -, it is $readstrand";}
-		}
+	}
 	close IN;
 	print "Finished outputting data to each BED file\n";
 
