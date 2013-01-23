@@ -17,7 +17,7 @@ use strict; use warnings;
 #              (0) Determine Read Length from Fastq.gz File
 #                (0.1) Determine Read Length from Fastq File
 #                (0.2) Determine Read Count from Fastq File
-#                (0.3) Determine Read Count from Fasta/Eland Extended File
+#                (0.3) Determine Read Count from Eland Extended File
 #              (1) Header and Path Modifier
 #
 #              -Bowtie Related-
@@ -79,13 +79,13 @@ sub fastq_readcount
 }
 
 ###########################################################################
-#        (0.3) Determine Read Count from Fasta/Eland Extended File        #
+#           (0.3) Determine Read Count from Eland Extended File           #
 ###########################################################################
 
-sub fasta_readcount
+sub elandext_readcount
 {
-	my ($fastafile) = @_;
-	my $readcount = `wc -l $fastafile`;
+	my ($elandextfile) = @_;
+	my $readcount = `wc -l $elandextfile`;
 	return $readcount;
 }
 
@@ -220,7 +220,7 @@ sub elandext_to_bed
 	# Input
 	my ($infile, $ExperimentTopDir, $FilePrefix, $basereadlength, $finalreadlength, $chr, $pos, $strand, $MaxDupReads) = @_;
 
-	my $outdir = $ExperimentTopDir . "/" . $FilePrefix . "_bed";
+	my $outdir = $ExperimentTopDir . $FilePrefix . "_bed";
 	my $outprefix = $FilePrefix;
 
 	# Makes Output Directory
@@ -299,7 +299,7 @@ sub elandext_to_bed
 			}
 			if($n == 28)
 			{
-				$filename = $ExperimentTopDir . "/" . "Stats_" . $outprefix . ".txt";
+				$filename = $ExperimentTopDir . "Stats_" . $outprefix . ".txt";
 			}
 			if($n == 29)
 			{

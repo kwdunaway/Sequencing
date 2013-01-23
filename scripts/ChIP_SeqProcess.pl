@@ -23,20 +23,21 @@ die "ChIP_SeqProcess.pl needs the following parameters:
     1) Experiment Top Folder path (e.g. Folder/)
     2) Raw file folder (make sure they are the only zipped files and the extension is .fq.gz) 
     3) File prefix (will have 3 files with _Uniq, _Repeat, and _Nonaligned and located in Experiment Top Folder path)
-    4) Read length
-    5) Final read length
-    6) WIG Track Color (in RRR,GGG,BBB format)
-    7) Maximum Duplicate Reads (1 for no duplicates)
-" unless @ARGV == 7;
+    4) Final Read length (to be extended to)
+    5) WIG Track Color (in RRR,GGG,BBB format)
+    6) Maximum Duplicate Reads (1 for no duplicates)
+" unless @ARGV == 6;
 
 my $ExperimentTopDir = shift(@ARGV);
 my $rawfqfolder = shift(@ARGV);
 my $FilePrefix = shift(@ARGV);
-my $ReadLength = shift(@ARGV);
 my $FinalReadLength = shift(@ARGV);
 my $WIGTrackColor = shift(@ARGV);
 my $MaxDupReads = shift(@ARGV);
-die "Maximum duplicate reads should be at least 1." unless $MaxDupReads > 0;
+
+#Error Checking
+die "Error: Maximum duplicate reads should be at least 1.\n" unless $MaxDupReads > 0;
+die "Error: Experiment Top Folder name should contain a '/' at the end.\n" unless $ExperimentTopDir =~ m/\/$/;
 
 my $commandline = ""; #inputs for command line
 
@@ -62,7 +63,7 @@ SeqProcess::add_path($addtoPATH);
 my $filtered_fastq = SeqProcess::filter_zip($rawfqfolder);
 
 #   (2.5) Determine Read Length from Fastq File
-
+my $ReadLength = SeqProcess::fastq_readlength($filtered_fastq);
 
 # (3) Make folder for experiment and run Bowtie (separates reads between aligned and non-aligned)
 my ($nonalignedreadsfile, $alignedpreseparationfile) = SeqProcess::run_bowtie($ExperimentTopDir, $FilePrefix, $mm9path, $filtered_fastq);
@@ -102,19 +103,19 @@ print "Zipping unique reads files\n";
 # (8) Change BED file read length (Choose the final read length)
 
 # Create folder named "$FilePrefix_bed" inside $ExperimentTopDir to contain new bed files
-$commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_bed\n";
+$commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_extendedbed\n";
 `$commandline`;
 
 # The original bed files contain the prefix, $FilePrefix/$FilePrefix_chr
 # The new bed files (in $ExperimentTopDir) contain the prefix, $FilePrefix_bed/$FilePrefix_Chr
-my $origlengthbedfiles =                      $FilePrefix .     "/" . $FilePrefix . "_chr";
-my $finallengthbedfiles = $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefix;
+my $origlengthbedfiles =  $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefix . "_chr";
+my $finallengthbedfiles = $ExperimentTopDir . $FilePrefix . "_extendedbed/" . $FilePrefix;
 
 SeqProcess::change_bed_read_length($origlengthbedfiles, $finallengthbedfiles, $FinalReadLength);
 
 # (9) Remove Unextended Bed Folder
 print "Removing unextended bed files\n";
-`rm -R $FilePrefix`;
+`rm -R $origlengthbedfiles`;
 
 
 # (10) BED to FPKM WIG files
@@ -125,7 +126,7 @@ $commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_FPKMWIG\n";
 
 # The bed files contain the prefix, $FilePrefix_bed/$FilePrefix_Chr
 # The new FPKM WIG files contain the prefix, $FilePrefix_FPKMWIG/$FilePrefix_FPKM
-my $bedtowigfiles = $ExperimentTopDir . $FilePrefix .     "_bed/" . $FilePrefix . "_Chr";
+my $bedtowigfiles = $ExperimentTopDir . $FilePrefix . "_extendedbed/" . $FilePrefix . "_Chr";
 my $fpkmwigfiles =  $ExperimentTopDir . $FilePrefix . "_FPKMWIG/" . $FilePrefix . "_FPKM";
 
 SeqProcess::vswig_to_fpkmwig($bedtowigfiles, $fpkmwigfiles, $FilePrefix, $WIGTrackColor, 		$FinalReadLength, $MaxDupReads);
@@ -145,7 +146,7 @@ SeqProcess::visualize_fpkmwig($pre_visfpkmwig, $visfpkmwig, 10, $WIGTrackColor, 
 
 
 __END__
-useage: RPKM.pl 
+usage: RPKM.pl 
     1) Input VarStepWIG file (format: position [tab] height)
     2) Output FPKM wig file 
     3) Read Length

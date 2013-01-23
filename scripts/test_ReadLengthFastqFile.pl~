@@ -8,6 +8,10 @@ use strict; use warnings;
 	# Input
 	my ($fastqgzfile) = @ARGV;
 
+die "Experiment Top Folder name should contain a '/' at the end.\n" unless $fastqgzfile =~ m/\/$/;
+
+__END__
+	
 	my $readlength = `gunzip -c $fastqgzfile | head -n 2 | tail -n 1 | tr -d '\n'| wc -m | tr -d '\n'`;
 
 	print $readlength, "\n";
@@ -15,5 +19,5 @@ use strict; use warnings;
 # Read count in fastq files
 
 	my $readcount = `gunzip -c $fastqgzfile | wc -l | tr -d '\n'`;
-	die "Fastq file format error" if ($readcount+0) % 4 != 0;
+	die "Fastq file format error" if $readcount % 4 != 0;
 	print $readcount/4, "\n";
