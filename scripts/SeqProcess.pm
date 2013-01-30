@@ -200,12 +200,14 @@ sub separate_repeats
 #  be used to analyze the data.                                           #
 #                                                                         #
 #  Input: 1) Input file name                                              #
-#         2) Output dir name                                              #
-#         3) Read length                                                  #
-#         4) Chromosome array number                                      #
-#         5) Position array number                                        #
-#         6) Strand array number                                          #
-#         7) Maximum Duplicate Reads (1 for no duplicates)                #
+#         2) Experiment Top Folder Path                                   #
+#         3) Output dir name                                              #
+#         4) Base Read Length                                             #
+#         5) Final Read Length                                            #
+#         6) Chromosome array number                                      #
+#         7) Position array number                                        #
+#         8) Strand array number                                          #
+#         9) Maximum Duplicate Reads (1 for no duplicates)                #
 #                                                                         #
 # Output: Creates directory containing:                                   #
 #           1) BED files for each chromosome                              #
@@ -218,13 +220,13 @@ sub elandext_to_bed
 {
 	print "\nBeginning conversion of Eland Extended format to BED format\n";
 	# Input
-	my ($infile, $ExperimentTopDir, $outprefix, $basereadlength, $finalreadlength, $chr, $pos, $strand, $MaxDupReads) = @_;
+	my ($infile, $ExperimentTopDir, $FilePrefix, $basereadlength, $finalreadlength, $chr, $pos, $strand, $MaxDupReads) = @_;
 
 	my $outdir = $ExperimentTopDir . "/" . $FilePrefix . "_bed";
 	my $minusstrandlength = $finalreadlength - $basereadlength;
 	my %Count;
 	my %Files;
-	$totalcount = 0;
+	my $totalcount = 0;
 
 	# Makes Output Directory
 	print "Making $outdir directory\n";
@@ -239,25 +241,25 @@ sub elandext_to_bed
 	while (<IN>)
 	{
 		chomp;
-		@array = split("\t", $_); # Splitting data into array
+		my @array = split("\t", $_); # Splitting data into array
 		my $chrom = $array[$chr];
 		my $readstrand = $array[$strand];
 		$totalcount++; # Add to total mapped reads
 
 		#If outputfile has not been for the chromosome, make it
-		if(! exists $Count(total)){
-			$Count($chrom) = 0;
-			my $filename = $outdir . "/" . $outprefix . "_" . $chrom . ".bed";
-			open($Files($chrom), ">$filename") or die "cannot open $filename outfile";	
+		if(!$Count{$totalcount}){
+			$Count{$chrom} = 0;
+			my $filename = $outdir . "/" . $FilePrefix . "_" . $chrom . ".bed";
+			open($Files{$chrom}, ">$filename") or die "cannot open $filename outfile";	
 		}
-		my $printfile = $Files($chrom);
-		$Count($chrom)++;
+		my $printfile = $Files{$chrom};
+		$Count{$chrom}++;
 
 		if($readstrand == "+"){
-			print {$Files($chrom)} $chrom , "\t" , $array[$pos] , "\t" , $array[$pos] + $finalreadlength, "\t", $outprefix , "\t", "0", "\t" , $readstrand , "\n";
+			print {$Files{$chrom}} $chrom , "\t" , $array[$pos] , "\t" , $array[$pos] + $finalreadlength, "\t", $FilePrefix , "\t", "0", "\t" , $readstrand , "\n";
 		}
 		elsif($readstrand == "-"){
-			print {$Files($chrom)} $chrom , "\t" , $array[$pos] - $minusstrandlength, "\t" , $array[$pos] + $basereadlength, "\t", $outprefix , "\t", "0", "\t" , $readstrand , "\n";
+			print {$Files{$chrom}} $chrom , "\t" , $array[$pos] - $minusstrandlength, "\t" , $array[$pos] + $basereadlength, "\t", $FilePrefix , "\t", "0", "\t" , $readstrand , "\n";
 		}
 		else {die "Strand is not + nor -, it is $readstrand";}
 	}
@@ -269,13 +271,13 @@ sub elandext_to_bed
 	#                  Printing statistics to Stats Outfile                    #
 	############################################################################
 
-	print "Printing statistics to ", $chr_out[28], "\n";
-	my $filename = $ExperimentTopDir . "/" . "Stats_" . $outprefix . ".txt";
+	my $filename = $ExperimentTopDir . "/" . "Stats_" . $FilePrefix . ".txt";
+	print "Printing statistics to ", $filename, "\n";
 	open(STATS, ">$filename") or die "cannot open $filename outfile";	
-	foreach $key (sort keys %Files) {
-		print STATS "Number of reads mapped " , $key , " is:\t" , $Count($key) , "\n";
-		close {$Files($chrom)};
-		my $bedfile = $outdir . "/" . $outprefix . "_" . $key . ".bed";
+	foreach my $key (sort keys %Files) {
+		print STATS "Number of reads mapped " , $key , " is:\t" , $Count{$key} , "\n";
+		close $Files{$key};
+		my $bedfile = $outdir . "/" . $FilePrefix . "_" . $key . ".bed";
 		sort_bed($bedfile);
 		eliminate_bed_dups($bedfile, $MaxDupReads);
 	}
