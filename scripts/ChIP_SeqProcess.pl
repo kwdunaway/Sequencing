@@ -129,7 +129,7 @@ $commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_FPKMWIG\n";
 
 # The bed files contain the prefix, $FilePrefix_bed/$FilePrefix_Chr
 # The new FPKM WIG files contain the prefix, $FilePrefix_FPKMWIG/$FilePrefix_FPKM
-my $bedtowigfiles = $ExperimentTopDir . $FilePrefix . "_extendedbed/" . $FilePrefix . "_Chr";
+my $bedtowigfiles = $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefix . "_Chr";
 my $fpkmwigfiles =  $ExperimentTopDir . $FilePrefix . "_FPKMWIG/" . $FilePrefix . "_FPKM";
 
 SeqProcess::vswig_to_fpkmwig($bedtowigfiles, $fpkmwigfiles, $FilePrefix, $WIGTrackColor, 		$FinalReadLength, $MaxDupReads);

@@ -61,8 +61,10 @@ sub fastqgz_readlength
 sub fastq_readlength 
 {
 	my ($fastqfile) = @_;
-	my $readlength = `head -n 2 | tail -n 1 | tr -d '\n'| wc -m | tr -d '\n'`;
 
+	print "Obtaining readlength from " , $fastqfile , "\n";
+	my $readlength = `head -n 2 $fastqfile | tail -n 1 | tr -d '\n'| wc -m | tr -d '\n'`;
+	print "Finished: Obtaining read length from " , $fastqfile , ". readlength is ", $readlength ," \n\n";
 	return $readlength;
 }
 
@@ -96,9 +98,10 @@ sub elandext_readcount
 sub add_path 
 {
 	my ($addtoPATH) = @_;
-
+	print "Adding " , $addtoPATH , " to PATH for rest of this script.\n";
 	print "\nAdding $addtoPATH to PATH\n\n";
 	$ENV{'PATH'} = $ENV{'PATH'} . ":" . $addtoPATH;
+	print "Finished: Adding " , $addtoPATH , " to PATH for rest of this script.\n\n";	
 }
 
 ###########################################################################
@@ -113,8 +116,10 @@ sub filter_zip
 	my $filtered_fastq = $rawfqfolder . "filtered.fq";
 
 	print "Filtering $rawfqfolder files and outputting to $filtered_fastq\n";
-	`gunzip -c $rawfqfolder*.gz | grep -A 3 '^@.* [^:]*:N:[^:]*:' |   grep -v \"^--\$\" >  $filtered_fastq\n\n`;
-
+	my $comline = "gunzip -c " . $rawfqfolder . "*.gz | grep -A 3 '^@.* [^:]*:N:[^:]*:' |   grep -v \"^--\$\" >  " . $filtered_fastq;
+	print "$comline \n\n";
+	`$comline`;
+	print "Finished: Filtering $rawfqfolder files and outputting to $filtered_fastq\n\n";
 	return $filtered_fastq;
 }
 	
@@ -255,10 +260,10 @@ sub elandext_to_bed
 		my $printfile = $Files{$chrom};
 		$Count{$chrom}++;
 
-		if($readstrand == "+"){
+		if($readstrand eq "+"){
 			print {$Files{$chrom}} $chrom , "\t" , $array[$pos] , "\t" , $array[$pos] + $finalreadlength, "\t", $FilePrefix , "\t", "0", "\t" , $readstrand , "\n";
 		}
-		elsif($readstrand == "-"){
+		elsif($readstrand eq "-"){
 			print {$Files{$chrom}} $chrom , "\t" , $array[$pos] - $minusstrandlength, "\t" , $array[$pos] + $basereadlength, "\t", $FilePrefix , "\t", "0", "\t" , $readstrand , "\n";
 		}
 		else {die "Strand is not + nor -, it is $readstrand";}
@@ -483,7 +488,7 @@ sub change_bed_read_length
 	{
 		my $chr = shift(@Chr);
 		my $inputfile = $inputbedprefix . $chr . ".bed";
-		open(IN, "<$inputfile") or die "cannot open $inputfile infile";
+		open(IN, "<$inputfile") or do {next;};
 		my $outfile = $outputbedprefix . "_Chr" . $chr . ".bed";
 		open(OUT, ">$outfile") or die "cannot open $outfile outfile";
 
