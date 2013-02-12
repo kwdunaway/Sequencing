@@ -113,7 +113,7 @@ $commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_extendedbed\n";
 # The new bed files (in $ExperimentTopDir) contain the prefix, $FilePrefix_bed/$FilePrefix_Chr
 my $origlengthbedfiles =  $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefix . "_chr";
 my $finallengthbedfiles = $ExperimentTopDir . $FilePrefix . "_extendedbed/" . $FilePrefix;
-my $origlengthbedfolder =  $ExperimentTopDir . $FilePrefix . "_bed/"
+my $origlengthbedfolder =  $ExperimentTopDir . $FilePrefix . "_bed/";
 
 SeqProcess::change_bed_read_length($origlengthbedfiles, $finallengthbedfiles, $FinalReadLength);
 
