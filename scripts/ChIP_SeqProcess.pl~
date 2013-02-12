@@ -99,7 +99,7 @@ print "Zipping non-aligned reads and repeat reads files\n";
 
 
 # (7) Make BED files from the unique reads bowtie output and zip the unique reads file
-SeqProcess::elandext_to_bed($uniqalignedreadsfile, $ExperimentTopDir, $FilePrefix, $ReadLength, 2, 3, 1, $MaxDupReads);
+SeqProcess::elandext_to_bed($uniqalignedreadsfile, $ExperimentTopDir, $FilePrefix, $ReadLength, $FinalReadLength, 2, 3, 1, $MaxDupReads);
 print "Zipping unique reads files\n";
 `gzip $uniqalignedreadsfile`;
 

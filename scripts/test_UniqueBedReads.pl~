@@ -12,7 +12,18 @@ use strict; use warnings;
 #                  2) Total Number of Duplicate Read Positions            #
 ###########################################################################
 
+ 	my @chr;
+	my @files = <*>;
+	@files = grep /hr(.+)\.bed/, @files;
 
+	foreach my $file (@files) {
+		$file =~ /hr(.+)\.bed/;
+		push (@chr, $1);
+	}
+	@chr = sort @chr;
+	print "@chr\n";
+
+__END__
 	# Input
 	my ($bedfile, $MaxDupReads) = @ARGV;
 	
@@ -64,11 +75,11 @@ use strict; use warnings;
 		elsif ($DupCount >= $MaxDupReads)
 		{
 			$TotalDupReads++;
-			$DupCount++;
 			if ($DupCount == $MaxDupReads)
 			{
 				$TotalDupPositions++;
 			}
+			$DupCount++;
 		}
 	}
 

@@ -113,12 +113,13 @@ $commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_extendedbed\n";
 # The new bed files (in $ExperimentTopDir) contain the prefix, $FilePrefix_bed/$FilePrefix_Chr
 my $origlengthbedfiles =  $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefix . "_chr";
 my $finallengthbedfiles = $ExperimentTopDir . $FilePrefix . "_extendedbed/" . $FilePrefix;
+my $origlengthbedfolder =  $ExperimentTopDir . $FilePrefix . "_bed/"
 
 SeqProcess::change_bed_read_length($origlengthbedfiles, $finallengthbedfiles, $FinalReadLength);
 
 # (9) Remove Unextended Bed Folder
 print "Removing unextended bed files\n";
-`rm -R $origlengthbedfiles`;
+`rm -R $origlengthbedfolder`;
 
 
 # (10) BED to FPKM WIG files
@@ -132,7 +133,7 @@ $commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_FPKMWIG\n";
 my $bedtowigfiles = $ExperimentTopDir . $FilePrefix . "_extendedbed/" . $FilePrefix . "_Chr";
 my $fpkmwigfiles =  $ExperimentTopDir . $FilePrefix . "_FPKMWIG/" . $FilePrefix . "_FPKM";
 
-SeqProcess::vswig_to_fpkmwig($bedtowigfiles, $fpkmwigfiles, $FilePrefix, $WIGTrackColor, 		$FinalReadLength, $MaxDupReads);
+SeqProcess::beddir_to_fpkmwig($bedtowigfiles, $fpkmwigfiles, $FilePrefix, $WIGTrackColor, 		$FinalReadLength, $MaxDupReads);
 
 # (11) Visualize FPKMWIG
 

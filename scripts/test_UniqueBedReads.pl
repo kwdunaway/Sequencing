@@ -12,7 +12,6 @@ use strict; use warnings;
 #                  2) Total Number of Duplicate Read Positions            #
 ###########################################################################
 
-
 	# Input
 	my ($bedfile, $MaxDupReads) = @ARGV;
 	
