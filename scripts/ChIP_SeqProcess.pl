@@ -6,7 +6,7 @@ use SeqProcess;
 ###############################################################################################
 # Author: Keith Dunaway & Roy Chu
 # Email: kwdunaway@ucdavis.edu & rgchu@ucdavis.edu
-# Date: 10-30-2012
+# Date: 2-12-2013
 # Script Name: ChIP_SeqProcess.pl
 #
 # This script processes the subroutines in SeqProcess.pm.
