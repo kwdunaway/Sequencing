@@ -44,9 +44,31 @@ $rawfqfolder = $rawfqfolder . "\/" unless $rawfqfolder =~ m/\/$/;
 
 my $commandline = ""; #inputs for command line
 
-#TODO: Must figure out how to get read count automatically
+
+###########################
+# Computer specific paths #
+###########################
+
 my $addtoPATH = "/home/kwdunaway/tuxedo/bowtie-0.12.7/:/home/kwdunaway/tuxedo/tophat-1.4.1.Linux_x86_64/:/home/kwdunaway/tuxedo/samtools/:/home/kwdunaway/tuxedo/cufflinks-1.3.0.Linux_x86_64/";
 my $mm9path = "/home/kwdunaway/mm9/Mus_musculus_UCSC_mm9/Mus_musculus/UCSC/mm9/Sequence/BowtieIndex/genome";
+my $hg18path = "/home/kwdunaway/hg18/hg18";
+
+
+####################
+# Global Variables #
+####################
+
+my $filtered_fastq = $rawfqfolder . "filtered.fq";
+my $fastqgzfile = $rawfqfolder . "*.gz";
+my $ReadLength = SeqProcess::fastqgz_readlength($fastqgzfile);  # Determines Read Length from zipped raw files
+my $nonalignedreadsfile = $ExperimentTopDir . $FilePrefix . "_NonAligned.fq";
+my $alignedpreseparationfile = $ExperimentTopDir . $FilePrefix . "_alignedpreseparation.txt";
+my $uniqalignedreadsfile = $ExperimentTopDir . $FilePrefix . "_Uniq.txt";
+my $repalignedreadsfile = $ExperimentTopDir . $FilePrefix . "_Repeat.txt";
+my $bedtowigfiles = $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefix . "_";
+my $fpkmwigfiles =  $ExperimentTopDir . $FilePrefix . "_FPKMWIG/" . $FilePrefix . "_FPKM";
+my $pre_visfpkmwig = $ExperimentTopDir . $FilePrefix .    "_FPKMWIG/" . $FilePrefix . "_FPKM_";
+my $visfpkmwig = $ExperimentTopDir . $FilePrefix . "_VisFPKMWIG/" . $FilePrefix . "_VisFPKMWIG";
 
 
 ###########################################################################
@@ -54,7 +76,6 @@ my $mm9path = "/home/kwdunaway/mm9/Mus_musculus_UCSC_mm9/Mus_musculus/UCSC/mm9/S
 #                                                                         #
 # (1) Pathing                                                             #
 # (2) Prepare temp files for bowtie                                       #
-#   (2.5) Determine Read Length                                           #
 # (3) Bowtie (Separates reads between aligned and non-aligned)            #
 # (4) Remove temp files                                                   #
 ###########################################################################
@@ -63,13 +84,10 @@ my $mm9path = "/home/kwdunaway/mm9/Mus_musculus_UCSC_mm9/Mus_musculus/UCSC/mm9/S
 SeqProcess::add_path($addtoPATH);
 
 # (2) Unzip zipped files, filter them, and combine into one .fq file
-my $filtered_fastq = SeqProcess::filter_zip($rawfqfolder);
-
-#   (2.5) Determine Read Length from Fastq File
-my $ReadLength = SeqProcess::fastq_readlength($filtered_fastq);
+SeqProcess::filter_zip($rawfqfolder);
 
 # (3) Make folder for experiment and run Bowtie (separates reads between aligned and non-aligned)
-my ($nonalignedreadsfile, $alignedpreseparationfile) = SeqProcess::run_bowtie($ExperimentTopDir, $FilePrefix, $mm9path, $filtered_fastq);
+SeqProcess::run_bowtie($ExperimentTopDir, $FilePrefix, $mm9path, $filtered_fastq);
 
 # (4) Remove made files
 print "Removing $filtered_fastq\n";
@@ -82,71 +100,54 @@ print "Removing $filtered_fastq\n";
 # (5) Separate aligned reads file into repeat reads and unique reads files             #
 # (6) Zip Non-aligned and Repeat files                                                 #
 # (7) Make BED files from unique reads files and zip the unique reads file             #
-# (8) Extend BED file read length                                                      #
-# (9) Remove unextended bed files                                                      #
 # (10) Convert BED files to FPKM WIG files                                             #
 # (11) Convert FPKM WIG files to Visualize FPKM WIG files                              #
 ########################################################################################
 
 
 # (5) Separate repeats from uniques into different files
-my ($uniqalignedreadsfile, $repalignedreadsfile) = SeqProcess::separate_repeats($ExperimentTopDir, $FilePrefix, $alignedpreseparationfile);
+SeqProcess::separate_repeats($ExperimentTopDir, $FilePrefix, $alignedpreseparationfile);
+
+# (7) Make BED files from the unique reads bowtie output and zip the unique reads file
+my @Chromosomes = SeqProcess::elandext_to_bed($uniqalignedreadsfile, $ExperimentTopDir, $FilePrefix, $ReadLength, $FinalReadLength, 2, 3, 1, $MaxDupReads);
+print "Zipping unique reads files\n";
+`gzip $uniqalignedreadsfile`;
 
 # (6) Zip non-aligned reads and repeat reads files 
 print "Zipping non-aligned reads and repeat reads files\n";
 `gzip $nonalignedreadsfile`;
 `gzip $repalignedreadsfile`;
 
-
-# (7) Make BED files from the unique reads bowtie output and zip the unique reads file
-SeqProcess::elandext_to_bed($uniqalignedreadsfile, $ExperimentTopDir, $FilePrefix, $ReadLength, $FinalReadLength, 2, 3, 1, $MaxDupReads);
-print "Zipping unique reads files\n";
-`gzip $uniqalignedreadsfile`;
-
 # (8) Change BED file read length (Choose the final read length)
-
 # Create folder named "$FilePrefix_bed" inside $ExperimentTopDir to contain new bed files
-$commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_extendedbed\n";
-`$commandline`;
-
+#$commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_extendedbed\n";
+#`$commandline`;
 # The original bed files contain the prefix, $FilePrefix/$FilePrefix_chr
 # The new bed files (in $ExperimentTopDir) contain the prefix, $FilePrefix_bed/$FilePrefix_Chr
-my $origlengthbedfiles =  $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefix . "_chr";
-my $finallengthbedfiles = $ExperimentTopDir . $FilePrefix . "_extendedbed/" . $FilePrefix;
-my $origlengthbedfolder =  $ExperimentTopDir . $FilePrefix . "_bed/";
-
-SeqProcess::change_bed_read_length($origlengthbedfiles, $finallengthbedfiles, $FinalReadLength);
-
+#my $origlengthbedfiles =  $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefix . "_chr";
+#my $finallengthbedfiles = $ExperimentTopDir . $FilePrefix . "_extendedbed/" . $FilePrefix;
+#my $origlengthbedfolder =  $ExperimentTopDir . $FilePrefix . "_bed/";
+#SeqProcess::change_bed_read_length($origlengthbedfiles, $finallengthbedfiles, $FinalReadLength, @Chromosomes);
 # (9) Remove Unextended Bed Folder
-print "Removing unextended bed files\n";
-`rm -R $origlengthbedfolder`;
+#print "Removing unextended bed files\n";
+#`rm -R $origlengthbedfolder`;
 
 
 # (10) BED to FPKM WIG files
-
 # Create folder named "$FilePrefix_FPKMWIG" inside $ExperimentTopDir to contain new FPKM WIG files
 $commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_FPKMWIG\n";
 `$commandline`;
-
 # The bed files contain the prefix, $FilePrefix_bed/$FilePrefix_Chr
 # The new FPKM WIG files contain the prefix, $FilePrefix_FPKMWIG/$FilePrefix_FPKM
-my $bedtowigfiles = $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefix . "_Chr";
-my $fpkmwigfiles =  $ExperimentTopDir . $FilePrefix . "_FPKMWIG/" . $FilePrefix . "_FPKM";
-
-SeqProcess::beddir_to_fpkmwig($bedtowigfiles, $fpkmwigfiles, $FilePrefix, $WIGTrackColor, 		$FinalReadLength, $MaxDupReads);
+SeqProcess::beddir_to_fpkmwig($bedtowigfiles, $fpkmwigfiles, $FilePrefix, $WIGTrackColor,$FinalReadLength, $MaxDupReads, @Chromosomes);
 
 # (11) Visualize FPKMWIG
-
 # Create folder named "$FilePrefix_VisFPKMWIG" to contain Visualize FPKM WIG files
 $commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_VisFPKMWIG\n";
 `$commandline`;
-
 # The FPKM WIG files contain the prefix, $FilePrefix_FPKMWIG/$FilePrefix_FPKM_Chr
 # The Visualize FPKMWIG files contain the prefix, $FilePrefix_VisFPKMWIG/$FilePrefix_VisFPKMWIG_Chr
-my $pre_visfpkmwig = $ExperimentTopDir . $FilePrefix .    "_FPKMWIG/" . $FilePrefix . 				"_FPKM" . "_Chr";
-my $visfpkmwig =     $ExperimentTopDir . $FilePrefix . "_VisFPKMWIG/" . $FilePrefix . 				"_VisFPKMWIG";
-
-SeqProcess::visualize_fpkmwig($pre_visfpkmwig, $visfpkmwig, 10, $WIGTrackColor, $FilePrefix);
+SeqProcess::visualize_fpkmwig($pre_visfpkmwig, $visfpkmwig, 10, $WIGTrackColor, $FilePrefix, @Chromosomes);
 
 
 __END__
