@@ -218,7 +218,7 @@ sub elandext_to_bed
 	# Input
 	my ($infile, $ExperimentTopDir, $FilePrefix, $basereadlength, $finalreadlength, $chr, $pos, $strand, $MaxDupReads) = @_;
 
-	my $outdir = $ExperimentTopDir . "/" . $FilePrefix . "_bed";
+	my $outdir = $ExperimentTopDir . $FilePrefix . "_bed";
 	my $minusstrandlength = $finalreadlength - $basereadlength;
 	my %Count;
 	my %Files;
@@ -243,7 +243,7 @@ sub elandext_to_bed
 		$totalcount++; # Add to total mapped reads
 
 		#If outputfile has not been for the chromosome, make it
-		if(!$Count{$totalcount}){
+		if(! exists $Count{$chrom}){
 			$Count{$chrom} = 0;
 			my $filename = $outdir . "/" . $FilePrefix . "_" . $chrom . ".bed";
 			open($Files{$chrom}, ">$filename") or die "cannot open $filename outfile";	
@@ -551,7 +551,7 @@ sub beddir_to_vswig
 	#     Global Variables and I/O Initiation        #
 	##################################################
 
-	my @Chr = @Chromosomes;	# array that contains all the the names of the chromosomes
+#	my @Chr = @Chromosomes;	# array that contains all the the names of the chromosomes
 
 #	for (my $n = 1; $n < 20; $n++)
 #	{
@@ -562,18 +562,17 @@ sub beddir_to_vswig
 #	push(@Chr, "Y");
 
 	# Scan directory for number of chromosome files
-# 	my @Chr;
-#	my $filedir = $infileroot . "*.bed";
-#	my @files = <$filedir>;
-#	@files = grep /hr(.+)\.bed/, @files;
+ 	my @Chr;
+	my $filedir = $infileroot;
+	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path
+	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+	@files = grep /hr(.+)\.bed/, @files;
 
-#	foreach my $file (@files) {
-#		$file =~ /hr(.+)\.bed/;
-#		push (@Chr, $1);
-#		print $file , "\n";
-#	}
-#	@Chr = sort @Chr;
-
+	foreach my $file (@files) {
+		$file =~ /hr(.+)\.bed/;
+		push (@Chr, $1);
+	}
+	@Chr = sort @Chr;
 
 	####################################################################################
 	# Grabs the information from each line and assigns it to the appropriate variables #
@@ -582,10 +581,10 @@ sub beddir_to_vswig
 	print "\n\nStarting Bed to Wig conversion of files with prefix $infileroot:\n";
 	while(@Chr)
 	{
-		my $infile = $infileroot . $Chr[0] . ".bed";
+		my $infile = $infileroot . "_chr" . $Chr[0] . ".bed";
 		open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be 											read (must be .bed)
 		my @infileroot = split(".bed", $infile);
-		my $outfile = $outfileroot . "_" . $Chr[0] . ".wig";
+		my $outfile = $outfileroot . "_chr" . $Chr[0] . ".wig";
 		open(OUT, ">$outfile") or die "cannot open $outfile outfile"; #opens output file to 											write to (.wig)
 		# Prints the head of the track (necessary for genome browser to read file properly) 			(customizable through terminal)
 		my $wigname = $wignameroot . "_" . $Chr[0];
@@ -705,11 +704,13 @@ sub vswig_to_fpkmwig
 
 	print "Converting $inputWIGprefix Variable Step WIG files to $outprefix FPKM WIG files\n";
 
+	die "Error: Input WIG prefix ($inputWIGprefix) is same as the output WIG prefix ($outprefix).\n" if $inputWIGprefix == $outprefix;
+
 	##################################################
 	#     Global Variables and I/O Initiation        #
 	##################################################
 
-	my @Chr = @Chromosomes;             # array that contains all the the names of the mouse chromosomes
+#	my @Chr = @Chromosomes;             # array that contains all the the names of the mouse chromosomes
 	#for (my $n = 1; $n < 20; $n++)
 	#{
 	#	push(@Chr, $n);
@@ -717,6 +718,18 @@ sub vswig_to_fpkmwig
 	#push(@Chr, "M");
 	#push(@Chr, "X");
 	#push(@Chr, "Y");
+
+	my @Chr;
+	my $filedir = $inputWIGprefix;
+	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path
+	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+	@files = grep /hr(.+)\.bed/, @files;
+
+	foreach my $file (@files) {
+		$file =~ /hr(.+)\.bed/;
+		push (@Chr, $1);
+	}
+	@Chr = sort @Chr;
 
 	#############################################
 	# Calculate and print OUT FPKM from file(s) #
@@ -726,8 +739,8 @@ sub vswig_to_fpkmwig
 	{
 		my $chr = shift(@Chr);
 		print "Now Converting: Chr$chr\n";
-		my $inputWIG = $inputWIGprefix . $chr . ".wig";
-		my $outfile = $outprefix . "_" . $chr . ".wig";
+		my $inputWIG = $inputWIGprefix . "_chr" . $chr . ".wig";
+		my $outfile = $outprefix . "_chr" . $chr . ".wig";
 		open(INWIG, "<$inputWIG") or die "cannot open $inputWIG INWIG infile";
 		open(OUT, ">$outfile") or die "cannot open $outfile outfile";
 		my $lin = <INWIG>;
@@ -774,16 +787,15 @@ sub beddir_to_fpkmwig
 	my ($inputprefix, $outprefix, $wignameroot, $color, $readlength, $readcount, @Chromosomes) = @_;
 
 	my $varstepprefix = $inputprefix . "_TempVarStep";
-	my $varstepfiles  = $inputprefix . "_TempVarStep" . "_";
 
 	# BED Directory to Variable Step WIG
 	beddir_to_vswig($inputprefix, $varstepprefix, $wignameroot, $color, @Chromosomes);
 
 	# Variable Step WIG to FPKM WIG
-	vswig_to_fpkmwig($varstepfiles, $outprefix, $readlength, $readcount, @Chromosomes);
+	vswig_to_fpkmwig($varstepprefix, $outprefix, $readlength, $readcount, @Chromosomes);
 
 	# Remove Temporary Files
-	`rm $varstepfiles*`;
+	`rm $varstepprefix*`;
 }
 
 ###########################################################################
@@ -807,10 +819,12 @@ sub visualize_fpkmwig
 
 	print "Visualizing $inputprefix FPKM WIG files\n";
 
+	die "Error: Input WIG prefix ($inputprefix) is same as the output WIG prefix ($outprefix).\n" if $inputprefix == $outprefix;
+
 	##################################################
 	#     Global Variables and I/O Initiation        #
 	##################################################
-	my @Chr = @Chromosomes;             # array that contains all the the names of the mouse chromosomes
+#	my @Chr = @Chromosomes;             # array that contains all the the names of the mouse chromosomes
 #	for (my $n = 1; $n < 20; $n++)
 #	{
 #		push(@Chr, $n);
@@ -818,6 +832,18 @@ sub visualize_fpkmwig
 #	push(@Chr, "M");
 #	push(@Chr, "X");
 #	push(@Chr, "Y");
+
+	my @Chr;
+	my $filedir = $inputprefix;
+	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path
+	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+	@files = grep /hr(.+)\.bed/, @files;
+
+	foreach my $file (@files) {
+		$file =~ /hr(.+)\.bed/;
+		push (@Chr, $1);
+	}
+	@Chr = sort @Chr;
 
 	#############################################
 	# Visualize and print OUT FPKM from file(s) #
@@ -827,12 +853,12 @@ sub visualize_fpkmwig
 	{
 		my $chr = shift(@Chr);
 		print "Now Visualizing: Chr$chr\n";
-		my $inputWIG = $inputprefix . $chr . ".wig";
+		my $inputWIG = $inputprefix . "_chr" . $chr . ".wig";
 		open(IN, "<$inputWIG") or die "cannot open $inputWIG IN infile";
 		# Shave off first two header lines
 		my $lin = <IN>;
 		$lin = <IN>;
-		my $outfile = $outprefix . "_" . $chr . ".wig";	
+		my $outfile = $outprefix . "_chr" . $chr . ".wig";	
 		open(OUT, ">$outfile") or die "cannot open $outfile OUT outfile";
 		my $trackname = $tracknameprefix . "_" . $chr;
 	

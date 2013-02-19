@@ -65,9 +65,8 @@ my $nonalignedreadsfile = $ExperimentTopDir . $FilePrefix . "_NonAligned.fq";
 my $alignedpreseparationfile = $ExperimentTopDir . $FilePrefix . "_alignedpreseparation.txt";
 my $uniqalignedreadsfile = $ExperimentTopDir . $FilePrefix . "_Uniq.txt";
 my $repalignedreadsfile = $ExperimentTopDir . $FilePrefix . "_Repeat.txt";
-my $bedtowigfiles = $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefix . "_";
+my $bedtowigfiles = $ExperimentTopDir . $FilePrefix . "_bed/" . $FilePrefix;
 my $fpkmwigfiles =  $ExperimentTopDir . $FilePrefix . "_FPKMWIG/" . $FilePrefix . "_FPKM";
-my $pre_visfpkmwig = $ExperimentTopDir . $FilePrefix .    "_FPKMWIG/" . $FilePrefix . "_FPKM_";
 my $visfpkmwig = $ExperimentTopDir . $FilePrefix . "_VisFPKMWIG/" . $FilePrefix . "_VisFPKMWIG";
 
 
@@ -147,7 +146,7 @@ $commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_VisFPKMWIG\n";
 `$commandline`;
 # The FPKM WIG files contain the prefix, $FilePrefix_FPKMWIG/$FilePrefix_FPKM_Chr
 # The Visualize FPKMWIG files contain the prefix, $FilePrefix_VisFPKMWIG/$FilePrefix_VisFPKMWIG_Chr
-SeqProcess::visualize_fpkmwig($pre_visfpkmwig, $visfpkmwig, 10, $WIGTrackColor, $FilePrefix, @Chromosomes);
+SeqProcess::visualize_fpkmwig($fpkmwigfiles, $visfpkmwig, 10, $WIGTrackColor, $FilePrefix, @Chromosomes);
 
 
 __END__
