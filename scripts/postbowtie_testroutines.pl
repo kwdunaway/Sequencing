@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 BEGIN {push @INC, "/home/kwdunaway/perl_script";}
 use strict; use warnings;
-use SeqProcess;
+use SeqProcesstemp;
 
 ###############################################################################################
 # Author: Keith Dunaway & Roy Chu
@@ -76,7 +76,7 @@ my $visfpkmwig = $ExperimentTopDir . $FilePrefix . "_VisFPKMWIG/" . $FilePrefix 
 ###########################################################################
 
 # (1) Header and path modifier
-SeqProcess::add_path($addtoPATH);
+SeqProcesstemp::add_path($addtoPATH);
 
 ########################################################################################
 #                                Post-bowtie                                           #
@@ -90,10 +90,10 @@ SeqProcess::add_path($addtoPATH);
 
 
 # (5) Separate repeats from uniques into different files
-SeqProcess::separate_repeats($ExperimentTopDir, $FilePrefix, $alignedpreseparationfile);
+SeqProcesstemp::separate_repeats($ExperimentTopDir, $FilePrefix, $alignedpreseparationfile);
 
 # (7) Make BED files from the unique reads bowtie output and zip the unique reads file
-my @Chromosomes = SeqProcess::elandext_to_bed($uniqalignedreadsfile, $ExperimentTopDir, $FilePrefix, $ReadLength, $FinalReadLength, 2, 3, 1, $MaxDupReads);
+SeqProcesstemp::elandext_to_bed($uniqalignedreadsfile, $ExperimentTopDir, $FilePrefix, $ReadLength, $FinalReadLength, 2, 3, 1, $MaxDupReads);
 print "Zipping unique reads files\n";
 `gzip $uniqalignedreadsfile`;
 
@@ -123,7 +123,7 @@ $commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_FPKMWIG\n";
 `$commandline`;
 # The bed files contain the prefix, $FilePrefix_bed/$FilePrefix_Chr
 # The new FPKM WIG files contain the prefix, $FilePrefix_FPKMWIG/$FilePrefix_FPKM
-SeqProcess::beddir_to_fpkmwig($bedtowigfiles, $fpkmwigfiles, $FilePrefix, $WIGTrackColor,$FinalReadLength, $MaxDupReads, @Chromosomes);
+SeqProcesstemp::beddir_to_fpkmwig($bedtowigfiles, $fpkmwigfiles, $FilePrefix, $WIGTrackColor,$FinalReadLength, $MaxDupReads);
 
 # (11) Visualize FPKMWIG
 # Create folder named "$FilePrefix_VisFPKMWIG" to contain Visualize FPKM WIG files
@@ -131,4 +131,4 @@ $commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_VisFPKMWIG\n";
 `$commandline`;
 # The FPKM WIG files contain the prefix, $FilePrefix_FPKMWIG/$FilePrefix_FPKM_Chr
 # The Visualize FPKMWIG files contain the prefix, $FilePrefix_VisFPKMWIG/$FilePrefix_VisFPKMWIG_Chr
-SeqProcess::visualize_fpkmwig($fpkmwigfiles, $visfpkmwig, 10, $WIGTrackColor, $FilePrefix, @Chromosomes);
+SeqProcesstemp::visualize_fpkmwig($fpkmwigfiles, $visfpkmwig, 10, $WIGTrackColor, $FilePrefix);

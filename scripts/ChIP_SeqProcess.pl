@@ -20,12 +20,12 @@ use SeqProcess;
 ####################################################################
 
 die "ChIP_SeqProcess.pl needs the following parameters:
-    1) Experiment Top Folder path (e.g. Folder/)
-    2) Raw file folder (make sure they are the only zipped files and the extension is .fq.gz) 
-    3) File prefix (will have 3 files with _Uniq, _Repeat, and _Nonaligned and located in Experiment Top Folder path)
-    4) Final Read length (to be extended to)
+    1) Folder path to contain data (e.g. /home/user/Folder/)
+    2) Raw data file folder (the extension is .fq.gz (Fastq gzipped) and directory only contains .fq.gz) 
+    3) File prefix for created files (general name for new files)
+    4) Final Read length (for reads to be extended to)
     5) WIG Track Color (in RRR,GGG,BBB format)
-    6) Maximum Duplicate Reads (1 for no duplicates)
+    6) Maximum Duplicate Reads (1 for no duplicate reads)
 " unless @ARGV == 6;
 
 my $ExperimentTopDir = shift(@ARGV);
@@ -97,22 +97,22 @@ print "Removing $filtered_fastq\n";
 #                                Post-bowtie                                           #
 #                                                                                      #
 # (5) Separate aligned reads file into repeat reads and unique reads files             #
-# (6) Zip Non-aligned and Repeat files                                                 #
-# (7) Make BED files from unique reads files and zip the unique reads file             #
-# (10) Convert BED files to FPKM WIG files                                             #
-# (11) Convert FPKM WIG files to Visualize FPKM WIG files                              #
+# (6) Make BED files from unique reads files and zip the unique reads file             #
+# (7) Zip Non-aligned and Repeat files                                                 #
+# (8) Convert BED files to FPKM WIG files                                              #
+# (9) Convert FPKM WIG files to Visualize FPKM WIG files                               #
 ########################################################################################
 
 
 # (5) Separate repeats from uniques into different files
 SeqProcess::separate_repeats($ExperimentTopDir, $FilePrefix, $alignedpreseparationfile);
 
-# (7) Make BED files from the unique reads bowtie output and zip the unique reads file
-my @Chromosomes = SeqProcess::elandext_to_bed($uniqalignedreadsfile, $ExperimentTopDir, $FilePrefix, $ReadLength, $FinalReadLength, 2, 3, 1, $MaxDupReads);
+# (6) Make BED files from the unique reads bowtie output and zip the unique reads file
+SeqProcess::elandext_to_bed($uniqalignedreadsfile, $ExperimentTopDir, $FilePrefix, $ReadLength, $FinalReadLength, 2, 3, 1, $MaxDupReads);
 print "Zipping unique reads files\n";
 `gzip $uniqalignedreadsfile`;
 
-# (6) Zip non-aligned reads and repeat reads files 
+# (7) Zip non-aligned reads and repeat reads files 
 print "Zipping non-aligned reads and repeat reads files\n";
 `gzip $nonalignedreadsfile`;
 `gzip $repalignedreadsfile`;
@@ -132,21 +132,19 @@ print "Zipping non-aligned reads and repeat reads files\n";
 #`rm -R $origlengthbedfolder`;
 
 
-# (10) BED to FPKM WIG files
+# (8) Convert BED files to FPKM WIG files
 # Create folder named "$FilePrefix_FPKMWIG" inside $ExperimentTopDir to contain new FPKM WIG files
 $commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_FPKMWIG\n";
 `$commandline`;
-# The bed files contain the prefix, $FilePrefix_bed/$FilePrefix_Chr
-# The new FPKM WIG files contain the prefix, $FilePrefix_FPKMWIG/$FilePrefix_FPKM
-SeqProcess::beddir_to_fpkmwig($bedtowigfiles, $fpkmwigfiles, $FilePrefix, $WIGTrackColor,$FinalReadLength, $MaxDupReads, @Chromosomes);
+# The WIG Track Name Prefix is $FilePrefix
+SeqProcess::beddir_to_fpkmwig($bedtowigfiles, $fpkmwigfiles, $FilePrefix, $WIGTrackColor,$FinalReadLength, $MaxDupReads);
 
-# (11) Visualize FPKMWIG
+# (9) Convert FPKM WIG files to Visualize FPKMWIG files
 # Create folder named "$FilePrefix_VisFPKMWIG" to contain Visualize FPKM WIG files
 $commandline = "mkdir " . $ExperimentTopDir . $FilePrefix . "_VisFPKMWIG\n";
 `$commandline`;
-# The FPKM WIG files contain the prefix, $FilePrefix_FPKMWIG/$FilePrefix_FPKM_Chr
-# The Visualize FPKMWIG files contain the prefix, $FilePrefix_VisFPKMWIG/$FilePrefix_VisFPKMWIG_Chr
-SeqProcess::visualize_fpkmwig($fpkmwigfiles, $visfpkmwig, 10, $WIGTrackColor, $FilePrefix, @Chromosomes);
+# Step Size is set to 10 and the WIG Track Name Prefix is $FilePrefix
+SeqProcess::visualize_fpkmwig($fpkmwigfiles, $visfpkmwig, 10, $WIGTrackColor, $FilePrefix);
 
 
 __END__
