@@ -48,8 +48,9 @@ use strict; use warnings;
 
 sub fastqgz_readlength 
 {
-	my ($fastqgzfile) = @_;
+	my ($fastqgzfile) = @_; # Input is "filename.fq.gz"
 	print "Read Length from .fq.gz File: Obtaining read length from " , $fastqgzfile , "\n";
+	# Uses gunzip to determine read length from the second line of the file
 	my $readlength = `gunzip -c $fastqgzfile | head -n 2 | tail -n 1 | tr -d '\n'| wc -m | tr -d '\n'`;
 	print "Read Length from .fq.gz File: Finished. Read length is ", $readlength ," \n\n";
 	return $readlength;
@@ -61,8 +62,9 @@ sub fastqgz_readlength
 
 sub fastq_readlength 
 {
-	my ($fastqfile) = @_;
+	my ($fastqfile) = @_; # Input is "filename.fq"
 	print "Read Length from .fq File: Obtaining read length from " , $fastqfile , "\n";
+	# Determines read length from the second line of the file
 	my $readlength = `head -n 2 $fastqfile | tail -n 1 | tr -d '\n'| wc -m | tr -d '\n'`;	
 	print "Read Length from .fq File: Finished. Read length is ", $readlength ," \n\n";
 	return $readlength;
@@ -74,8 +76,9 @@ sub fastq_readlength
 
 sub fastq_readcount
 {
-	my ($fastqfile) = @_;
+	my ($fastqfile) = @_; #Input is "filename.fq"
 	print "Read Count from .fq File: Obtaining read count from " , $fastqfile , "\n";
+	# Uses word count to find the read count and divides by 4 to return the actual read count
 	my $readcount = `wc -l $fastqfile | tr -d '\n'`;
 	die "Error: Read Count from .fq File: Fastq file format error" if $readcount % 4 != 0;
 	my $truereadcount = $readcount/4;
@@ -89,8 +92,9 @@ sub fastq_readcount
 
 sub elandext_readcount
 {
-	my ($elandextfile) = @_;
+	my ($elandextfile) = @_; #Input is Eland Extended file name
 	print "Read Count from Eland Extended File: Obtaining read count from " , $elandextfile , "\n";
+	# Uses word count to return the read count
 	my $readcount = `wc -l $elandextfile`;
 	print "Read Count from Eland Extended File: Finished. Read count is " , $readcount , "\n";
 	return $readcount;
@@ -102,7 +106,7 @@ sub elandext_readcount
 
 sub add_path 
 {
-	my ($addtoPATH) = @_;
+	my ($addtoPATH) = @_; # Input is path to add
 	print "Add to PATH: Adding " , $addtoPATH , " to PATH for rest of this script.\n";
 	$ENV{'PATH'} = $ENV{'PATH'} . ":" . $addtoPATH;
 	print "Add to PATH: Finished. Added " , $addtoPATH , " to PATH for rest of this script.\n\n";	
@@ -116,9 +120,10 @@ sub add_path
 
 sub filter_zip 
 {
-	my ($rawfqfolder) = @_;
-	my $filtered_fastq = $rawfqfolder . "filtered.fq";
+	my ($rawfqfolder) = @_; # Input is path to folder containing data with extension .fq.gz
+	my $filtered_fastq = $rawfqfolder . "filtered.fq"; # Filtered file is named "filtered.fq" in input folder
 	print "Filter zipped fastq files: Filtering $rawfqfolder files and outputting to $filtered_fastq\n";
+	# Uses gunzip and grep to filter the data into "filtered.fq"
 	my $comline = "gunzip -c " . $rawfqfolder . "*.gz | grep -A 3 '^@.* [^:]*:N:[^:]*:' |   grep -v \"^--\$\" >  " . $filtered_fastq;
 	`$comline`;
 	print "Filter zipped fastq files: Finished. Output to $filtered_fastq\n\n";
@@ -207,13 +212,14 @@ sub separate_repeats
 #                                                                         #
 #  This subroutine takes sequences in Eland Extended format (also known   #
 #  as s_#_export.txt files) and produces multiple BED files which can     #
-#  be used to analyze the data.                                           #
+#  be used to analyze the data. Requires position in array of chromosome  #
+#  number, position, and strand (+,-)                                     #
 #                                                                         #
 #  Input: 1) Input file name                                              #
-#         2) Experiment Top Folder Path                                   #
-#         3) Output dir name                                              #
-#         4) Base Read Length                                             #
-#         5) Final Read Length                                            #
+#         2) Top folder path of experiment (Folder to contain)            #
+#         3) Output directory name                                        #
+#         4) Starting Read Length (Current)                               #
+#         5) Final Read Length (Final to replace current)                 #
 #         6) Chromosome array number                                      #
 #         7) Position array number                                        #
 #         8) Strand array number                                          #
@@ -232,6 +238,7 @@ sub elandext_to_bed
 	# Input
 	my ($infile, $ExperimentTopDir, $FilePrefix, $basereadlength, $finalreadlength, $chr, $pos, $strand, $MaxDupReads) = @_;
 
+	# Variable Declarations
 	my $outdir = $ExperimentTopDir . $FilePrefix . "_bed"; # Output directory name
 	my $minusstrandlength = $finalreadlength - $basereadlength; # Calculation of the minus strand length
 	my %Count; # Keys = chromosome number, Values = number of mapped reads for specific chromosome
@@ -248,17 +255,21 @@ sub elandext_to_bed
 
 	open(IN, "<$infile") or die "Error: ElandExt to BED: cannot open $infile infile"; 
 	print "ElandExt to BED: Processing data into each chromosome output file in BED format\n";
+
+	############################################################################
+	#                      Processing Eland Extended File                      #
+	############################################################################
 	while (<IN>)
 	{
 		chomp;
-		my @array = split("\t", $_); # Splitting data into array
+		my @array = split("\t", $_); # Splitting tab-delimited data into array
 		my $chrom = $array[$chr];
 		my $readstrand = $array[$strand];
-		$totalcount++; # Add to total mapped reads
+		$totalcount++; # Add to total mapped reads (each line is a read)
 
-		#If output file has not been created for the chromosome, create it
+		#If output bed file has not been created for the chromosome, create it
 		if(! exists $Count{$chrom}){
-			$Count{$chrom} = 0;
+			$Count{$chrom} = 0; # Initialize read count for this chromosome 
 			my $filename = $outdir . "/" . $FilePrefix . "_" . $chrom . ".bed";
 			open($Files{$chrom}, ">$filename") or die "cannot open $filename chromosome output file";	
 		}
@@ -282,6 +293,7 @@ sub elandext_to_bed
 	#                  Printing statistics to Stats Outfile                    #
 	############################################################################
 	
+	# Statistics file name is Stats_fileprefix.txt in the specified folder
 	my $filename = $ExperimentTopDir . "/" . "Stats_" . $FilePrefix . ".txt";
 	print "ElandExt to BED: Printing statistics to ", $filename, "\n";
 	open(STATS, ">$filename") or die "Error: ElandExt to BED: cannot open $filename statistics output file";	
@@ -575,14 +587,14 @@ sub beddir_to_vswig
 	# Grabs the information from each line and assigns it to the appropriate variables #
 	####################################################################################
 
-	print "\n\nStarting Bed to Wig conversion of files with prefix $inputprefix:\n";
+	print "\n\nBED Directory to Variable Step WIG: Starting Bed to Wig conversion of files with prefix $inputprefix:\n";
 	while(@Chr)
 	{
 		my $infile = $inputprefix . "_chr" . $Chr[0] . ".bed";
-		open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be 											read (must be .bed)
+		open(IN, "<$infile") or die "Error: BED Directory to Variable Step WIG: cannot open $infile infile"; #opens input file to be read (must be .bed)
 		my @inputprefix = split(".bed", $infile);
 		my $outfile = $outfileroot . "_chr" . $Chr[0] . ".wig";
-		open(OUT, ">$outfile") or die "cannot open $outfile outfile"; #opens output file to 											write to (.wig)
+		open(OUT, ">$outfile") or die "Error: BED Directory to Variable Step WIG: cannot open $outfile outfile"; #opens output file to write to (.wig)
 		# Prints the head of the track (necessary for genome browser to read file properly) 			(customizable through terminal)
 		my $wigname = $wignameroot . "_chr" . $Chr[0];
 		print OUT "track type=wiggle_0 visibility=full autoScale=off name=\"", 
@@ -616,7 +628,7 @@ sub beddir_to_vswig
 				}
 	    
 				# ends program if you have different chromosomes in your data
-				die "You have different chromosomes in this bed file (Program ended before completion)/n" unless $chrom eq $chromcheck;
+				die "Error: BED Directory to Variable Step WIG: You have different chromosomes in this bed file (Program ended before completion)/n" unless $chrom eq $chromcheck;
 	    
 				# adds height to PosVal for the sequence found
 				my $addcount = $startread;
@@ -675,7 +687,7 @@ sub beddir_to_vswig
     
 		close IN;
 		close OUT;
-		print "Finished with Chromosome", $Chr[0] ,"\n";
+		print "BED Directory to Variable Step WIG: Finished with Chromosome", $Chr[0] ,"\n";
 		shift(@Chr);
 	}
 
@@ -699,9 +711,9 @@ sub vswig_to_fpkmwig
 	# Input
 	my ($inputprefix, $outprefix, $readlength, $readcount) = @_;
 
-	print "Converting $inputprefix Variable Step WIG files to $outprefix FPKM WIG files\n";
+	print "Variable Step WIG to FPKM WIG: Converting $inputprefix Variable Step WIG files to $outprefix FPKM WIG files\n";
 
-	die "Error: Input WIG prefix ($inputprefix) is same as the output WIG prefix ($outprefix).\n" if $inputprefix eq $outprefix;
+	die "Error: Variable Step WIG to FPKM WIG: Input WIG prefix ($inputprefix) is same as the output WIG prefix ($outprefix).\n" if $inputprefix eq $outprefix;
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
@@ -727,11 +739,11 @@ sub vswig_to_fpkmwig
 	while(@Chr)
 	{
 		my $chr = shift(@Chr);
-		print "Now Converting: Chr$chr\n";
+		print "Variable Step WIG to FPKM WIG: Now Converting: Chr$chr\n";
 		my $inputWIG = $inputprefix . "_chr" . $chr . ".wig";
 		my $outfile = $outprefix . "_chr" . $chr . ".wig";
-		open(INWIG, "<$inputWIG") or die "cannot open $inputWIG INWIG infile";
-		open(OUT, ">$outfile") or die "cannot open $outfile outfile";
+		open(INWIG, "<$inputWIG") or die "Error: Variable Step WIG to FPKM WIG: cannot open $inputWIG infile";
+		open(OUT, ">$outfile") or die "Error: Variable Step WIG to FPKM WIG: cannot open $outfile outfile";
 		my $lin = <INWIG>;
 		print OUT $lin;
 		$lin = <INWIG>;
@@ -750,7 +762,7 @@ sub vswig_to_fpkmwig
 		close OUT;
 		close INWIG;
 	}
-	print "Completed conversion of $inputprefix Variable Step WIG to $outprefix FPKM WIG\n";
+	print "Variable Step WIG to FPKM WIG: Completed conversion of $inputprefix Variable Step WIG to $outprefix FPKM WIG\n";
 }
 
 ###########################################################################
@@ -797,14 +809,14 @@ sub beddir_to_fpkmwig
 	# Grabs the information from each line and assigns it to the appropriate variables #
 	####################################################################################
 
-	print "\n\nStarting Bed to Wig conversion of files with prefix $inputprefix:\n";
+	print "\n\nBED Directory to FPKM WIG: Starting Bed to Wig conversion of files with prefix $inputprefix:\n";
 	while(@Chr)
 	{
 		my $infile = $inputprefix . "_chr" . $Chr[0] . ".bed";
-		open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be 											read (must be .bed)
+		open(IN, "<$infile") or die "Error: BED Directory to FPKM WIG: cannot open $infile infile"; #opens input file to be read (must be .bed)
 		my @inputprefix = split(".bed", $infile);
 		my $outfile = $outfileroot . "_chr" . $Chr[0] . ".wig";
-		open(OUT, ">$outfile") or die "cannot open $outfile outfile"; #opens output file to 											write to (.wig)
+		open(OUT, ">$outfile") or die "Error: BED Directory to FPKM WIG: cannot open $outfile outfile"; #opens output file to write to (.wig)
 		# Prints the head of the track (necessary for genome browser to read file properly) 			(customizable through terminal)
 		my $wigname = $wignameroot . "_chr" . $Chr[0];
 		print OUT "track type=wiggle_0 visibility=full autoScale=off name=\"", 
@@ -838,7 +850,7 @@ sub beddir_to_fpkmwig
 				}
 	    
 				# ends program if you have different chromosomes in your data
-				die "You have different chromosomes in this bed file (Program ended before completion)/n" unless $chrom eq $chromcheck;
+				die "Error: BED Directory to FPKM WIG: You have different chromosomes in this bed file (Program ended before completion)/n" unless $chrom eq $chromcheck;
 	    
 				# adds height to PosVal for the sequence found
 				my $addcount = $startread;
@@ -897,7 +909,7 @@ sub beddir_to_fpkmwig
     
 		close IN;
 		close OUT;
-		print "Finished with Chromosome", $Chr[0] ,"\n";
+		print "BED Directory to FPKM WIG: Finished with Chromosome", $Chr[0] ,"\n";
 		shift(@Chr);
 	}
 }
@@ -921,9 +933,9 @@ sub visualize_fpkmwig
 	# Input
 	my ($inputprefix, $outprefix, $stepsize, $color, $tracknameprefix, @Chromosomes) = @_;
 
-	print "Visualizing $inputprefix FPKM WIG files\n";
+	print "Visualize FPKM WIG: Visualizing $inputprefix FPKM WIG files\n";
 
-	die "Error: Input WIG prefix ($inputprefix) is same as the output WIG prefix ($outprefix).\n" if $inputprefix eq $outprefix;
+	die "Error: Visualize FPKM WIG: Input WIG prefix ($inputprefix) is same as the output WIG prefix ($outprefix).\n" if $inputprefix eq $outprefix;
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
@@ -949,14 +961,14 @@ sub visualize_fpkmwig
 	while(@Chr)
 	{
 		my $chr = shift(@Chr);
-		print "Now Visualizing: Chr$chr\n";
+		print "Visualize FPKM WIG: Now Visualizing: Chr$chr\n";
 		my $inputWIG = $inputprefix . "_chr" . $chr . ".wig";
-		open(IN, "<$inputWIG") or die "cannot open $inputWIG IN infile";
+		open(IN, "<$inputWIG") or die "Error: Visualize FPKM WIG: cannot open $inputWIG IN infile";
 		# Shave off first two header lines
 		my $lin = <IN>;
 		$lin = <IN>;
 		my $outfile = $outprefix . "_chr" . $chr . ".wig";	
-		open(OUT, ">$outfile") or die "cannot open $outfile OUT outfile";
+		open(OUT, ">$outfile") or die "Error: Visualize FPKM WIG: cannot open $outfile OUT outfile";
 		my $trackname = $tracknameprefix . "_" . $chr;
 	
 		print OUT "track type=wiggle_0 visibility=full autoScale=off name=\"", $trackname, "\" description=\"", $trackname, "\" color=", $color, "\n";
@@ -1004,11 +1016,11 @@ sub visualize_fpkmwig
 		print OUT $startpos , "\t" , $height , "\n";
 		close IN;
 		close OUT;	
-		print "Finished making $outfile, now zipping it.\n";
+		print "Visualize FPKM WIG: Finished making $outfile, now zipping it.\n";
 		my $commandline = "gzip $outfile";
 		`$commandline`;
 	}
-	print "Finished Visualizing $inputprefix FPKM WIG files\n";
+	print "Visualize FPKM WIG: Finished Visualizing $inputprefix FPKM WIG files\n";
 }
 
 ###########################################################################
@@ -1026,18 +1038,18 @@ sub visualize_fpkmwig
 
 sub rpkm_from_bed
 {
-	print "Loading GTFHash from GTF file\n";
+	print "RPKM From BED and GTF: Loading GTFHash from GTF file\n";
 	# Input
 	my ($inputprefix, $GTFfilename, $OutputName, $TotalReads) = @_;
 
-	print "Scoring RPKM from $inputprefix BED files and $GTFfilename GTF file\n";
+	print "RPKM From BED and GTF: Scoring RPKM from $inputprefix BED files and $GTFfilename GTF file\n";
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
 	##################################################
 
-	open(GTF, "<$GTFfilename") or die "cannot open $GTFfilename GTF infile";
-	open(OUT, ">$OutputName") or die "cannot open $OutputName OUT outfile";
+	open(GTF, "<$GTFfilename") or die "Error: RPKM From BED and GTF: cannot open $GTFfilename GTF infile";
+	open(OUT, ">$OutputName") or die "Error: RPKM From BED and GTF: cannot open $OutputName outfile";
 	print OUT "Gene_Name\tChrom_pos\tGene_length\tStrand\tRPKM\n";
 
 	# Scan BED directory for number of chromosomes
@@ -1066,7 +1078,7 @@ sub rpkm_from_bed
 	# 
 	# Note: count will be used later in the script but for now will be 0.
 
-	print "Loading GTFHash from GTF file\n";
+	print "RPKM From BED and GTF: Loading GTFHash from GTF file\n";
 	my %GTFHash;
 	while(<GTF>)
 	{
@@ -1128,17 +1140,17 @@ sub rpkm_from_bed
 
 		#opens infile
 		my $inputfile = $inputprefix . $chr . ".bed";
-		open(IN, "<$inputfile") or die "cannot open $inputfile IN infile";
+		open(IN, "<$inputfile") or die "Error: RPKM From BED and GTF: cannot open $inputfile IN infile";
 
 		#Makes a StartHash for the chromosome
-		print "Loading Chr$chr start positions into StartHash\n";
+		print "RPKM From BED and GTF: Loading Chr$chr start positions into StartHash\n";
 		my %StartHash;  #StartHash{position}[genename1,genename2,ect]
 		foreach my $gene_name (keys %{$GTFHash{$chrom_name}})
 		{ 
 			push(@{$StartHash{$GTFHash{$chrom_name}{$gene_name}[0]}},$gene_name);
 		}
 		
-		print "Analyzing Chromosome $chr \n";
+		print "RPKM From BED and GTF: Analyzing Chromosome $chr \n";
 		while(<IN>)
 		{
 			chomp;
@@ -1169,7 +1181,7 @@ sub rpkm_from_bed
 	close IN;
 	close GTF;
 	close OUT;
-	print "Finished with $OutputName RPKM file\n";
+	print "RPKM From BED and GTF: Finished with $OutputName RPKM file\n";
 }
 
 ###########################################################################
@@ -1190,14 +1202,14 @@ sub fpkm_from_gtf_fpkmwig
 	# Input
 	my ($inputprefix, $GTFfilename, $OutputName, $ColumnName, @Chromosomes) = @_;
 
-	print "Scoring FPKM from $inputprefix FPKM WIG files and $GTFfilename GTF file\n";
+	print "FPKM from GTF and FPKMWIG: Scoring FPKM from $inputprefix FPKM WIG files and $GTFfilename GTF file\n";
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
 	##################################################
 
-	open(GTF, "<$GTFfilename") or die "cannot open $GTFfilename GTF infile";
-	open(OUT, ">$OutputName") or die "cannot open $OutputName OUT outfile";
+	open(GTF, "<$GTFfilename") or die "Error: FPKM from GTF and FPKMWIG: cannot open $GTFfilename GTF infile";
+	open(OUT, ">$OutputName") or die "Error: FPKM from GTF and FPKMWIG: cannot open $OutputName OUT outfile";
 	print OUT "Feature_Name\tFull_position\tSub_Positions\tLength\tStrand\t$ColumnName\n";
 
 	# Scan WIG directory for number of chromosomes
@@ -1228,7 +1240,7 @@ sub fpkm_from_gtf_fpkmwig
 
 	my $source;
 
-	print "Loading GTFHash from GTF file.\n";
+	print "FPKM from GTF and FPKMWIG: Loading GTFHash from GTF file.\n";
 	my %GTFHash;
 	while(<GTF>)
 	{
@@ -1281,13 +1293,13 @@ sub fpkm_from_gtf_fpkmwig
 
 		# opens infile and removes first two lines from it (header lines)
 		my $inputfile = $inputprefix . $chr . ".wig";
-		open(IN, "<$inputfile") or die "cannot open $inputfile IN infile";
+		open(IN, "<$inputfile") or die "Error: FPKM from GTF and FPKMWIG: cannot open $inputfile IN infile";
 		<IN>; <IN>;
 
 		my %FeatureHash;
 		my $chrom_name = "chr" . $chr;
 
-		print "Loading Chr$chr start positions into FeatureHash.\n";
+		print "FPKM from GTF and FPKMWIG: Loading Chr$chr start positions into FeatureHash.\n";
 		my %StartHash;
 		# Makes a StartHash and a FeatureHash for the chromosome
 		foreach my $feature (keys %{$GTFHash{$chrom_name}}) 
@@ -1329,7 +1341,7 @@ sub fpkm_from_gtf_fpkmwig
 
 		my $lastendpos = 0;
 
-		print "Analyzing Chromosome $chr \n";
+		print "FPKM from GTF and FPKMWIG: Analyzing Chromosome $chr \n";
 		while(<IN>)
 		{
 			chomp;
@@ -1379,7 +1391,7 @@ sub fpkm_from_gtf_fpkmwig
 		}
 		close IN;
 	
-		print "Printing $chrom_name to Outfile\n\n";
+		print "FPKM from GTF and FPKMWIG: Printing $chrom_name to Outfile\n\n";
 		#Print FPKM's to Outfile
 		foreach my $feature (sort keys %{$GTFHash{$chrom_name}})
 		{ 
@@ -1414,7 +1426,7 @@ sub fpkm_from_gtf_fpkmwig
 		}	
 	}
 	close OUT;
-	print "Finished with $OutputName FPKM file\n";
+	print "FPKM from GTF and FPKMWIG: Finished with $OutputName FPKM file\n";
 }
 
 1;
