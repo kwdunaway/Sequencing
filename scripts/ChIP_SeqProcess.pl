@@ -20,7 +20,7 @@ use SeqProcess;
 ####################################################################
 
 die "ChIP_SeqProcess.pl needs the following parameters:
-    1) Folder path to contain data (e.g. /home/user/Folder/)
+    1) Folder path to contain data (e.g. /home/user/Folder/)(No spaces in path)
     2) Raw data file folder (the extension is .fq.gz (Fastq gzipped) and directory only contains .fq.gz) 
     3) File prefix for created files (general name for new files)
     4) Final Read length (for reads to be extended to)
@@ -39,8 +39,8 @@ my $MaxDupReads = shift(@ARGV);
 die "Error: 6) Maximum duplicate reads should be at least 1.\n" unless $MaxDupReads > 0;
 
 # Adjusting Folder Names
-$ExperimentTopDir = $ExperimentTopDir . "\/" unless $ExperimentTopDir =~ m/\/$/;
-$rawfqfolder = $rawfqfolder . "\/" unless $rawfqfolder =~ m/\/$/;
+$ExperimentTopDir = $ExperimentTopDir . "\/" unless $ExperimentTopDir =~ m/\/$/; # Ensures ending "/"
+$rawfqfolder = $rawfqfolder . "\/" unless $rawfqfolder =~ m/\/$/; # Ensures ending "/"
 
 my $commandline = ""; #inputs for command line
 
