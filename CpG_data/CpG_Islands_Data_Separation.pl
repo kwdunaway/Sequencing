@@ -132,38 +132,38 @@ while(<IN>){
 				# Entire Archipelago - starting and ending at the first and last island
 				if ($cpgcount[5] > 1) {print ARCHIPELAGOWITHOUTSHORES "\n";}
 				++$cpgcount[5];
-				print ARCHIPELAGOWITHOUTSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $archstart , "\t" , $archend , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+				print ARCHIPELAGOWITHOUTSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_Without_Outer_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[5]-1 , "\t" , $archstart , "\t" , $archend , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 
 				# Entire Archipelago - starting and ending at the outer shores
 				if ($cpgcount[4] > 1) {print ARCHIPELAGOWITHSHORES "\n";}
 				++$cpgcount[4];
-				print ARCHIPELAGOWITHSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $archstart - 2000 , "\t" , $archend + 2000, "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+				print ARCHIPELAGOWITHSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_With_Outer_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[4]-1 , "\t" , $archstart - 2000 , "\t" , $archend + 2000, "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 
 				# Archipelago Shores Only - CpG number will be that of the start of the archipelago's
 				# Outer Shore at the start
 				if ($cpgcount[6] > 1) {print ARCHIPELAGOSHORES "\n";}
 				++$cpgcount[6];
-				print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $archstart-2000 , "\t" , $archstart , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+				print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[4]-1, "_1" , "\t" , $archstart-2000 , "\t" , $archstart , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 
 				# Inner Shores
 				for(my $k = 0; $k < $archlineend - $archlinestart; $k++)
 				{
 					if ($cpgcount[6] > 1) {print ARCHIPELAGOSHORES "\n";}
 					++$cpgcount[6];
-					print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $GTFHash{$archlinestart+$k}[4] , "\t" , $GTFHash{$archlinestart+$k+1}[3] , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+					print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[4]-1, "_" , $k+2 , "\t" , $GTFHash{$archlinestart+$k}[4] , "\t" , $GTFHash{$archlinestart+$k+1}[3] , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 				}
 
 				# Outer Shore at the end
 				if ($cpgcount[6] > 1) {print ARCHIPELAGOSHORES "\n";}
 				++$cpgcount[6];
-				print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $archend , "\t" , $archend+2000 , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+				print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[4]-1, "_" , $archlineend-$archlinestart+2 , "\t" , $archend , "\t" , $archend+2000 , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 
 				# Archipelago Islands Only
 				for(my $j = 0; $j <= $archlineend - $archlinestart; $j++)
 				{
 					if ($cpgcount[3] > 1) {print ARCHIPELAGOISLANDS "\n";}
 					++$cpgcount[3];
-					print ARCHIPELAGOISLANDS $GTFHash{$archlinestart+$j}[0] , "\t" , $GTFHash{$archlinestart+$j}[1] , "\t" , $GTFHash{$archlinestart+$j}[2] , "\t" , $GTFHash{$archlinestart+$j}[3] , "\t" , $GTFHash{$archlinestart+$j}[4] , "\t" , $GTFHash{$archlinestart+$j}[5] , "\t" , $GTFHash{$archlinestart+$j}[6];
+					print ARCHIPELAGOISLANDS $GTFHash{$archlinestart+$j}[0] , "\t" , "hg18_CpG_Archipelagos_Islands" , "\t" , $GTFHash{$archlinestart+$j}[2] , "\t" , $GTFHash{$archlinestart+$j}[3] , "\t" , $GTFHash{$archlinestart+$j}[4] , "\t" , $GTFHash{$archlinestart+$j}[5] , "\t" , $GTFHash{$archlinestart+$j}[6];
 				}
 	
 				# Since the archipelago data has been printed, the variables can be reset
@@ -175,19 +175,20 @@ while(<IN>){
 			{
 				if ($cpgcount[0] > 1) {print ISLANDS "\n";}
 				++$cpgcount[0];
-				print ISLANDS $GTFHash{$linenum-1}[0] , "\t" , $GTFHash{$linenum-1}[1] , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[3] , "\t" , $GTFHash{$linenum-1}[4] , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
+				print ISLANDS $GTFHash{$linenum-1}[0] , "\t" , "hg18_Sole_CpG_Islands" , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[3] , "\t" , $GTFHash{$linenum-1}[4] , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
 
 				if ($cpgcount[1] > 1) {print ISLANDSANDSHORES "\n";}
 				++$cpgcount[1];
-				print ISLANDSANDSHORES $GTFHash{$linenum-1}[0] , "\t" , $GTFHash{$linenum-1}[1] , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[3]-2000 , "\t" , $GTFHash{$linenum-1}[4]+2000 , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
+				print ISLANDSANDSHORES $GTFHash{$linenum-1}[0] , "\t" , "hg18_Sole_CpG_Islands_And_Shores" , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[3]-2000 , "\t" , $GTFHash{$linenum-1}[4]+2000 , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
+
+				# Print Left Shore(1) and Right Shore(2)
+				if ($cpgcount[2] > 1) {print SHORES "\n";}
+				++$cpgcount[2];
+				print SHORES $GTFHash{$linenum-1}[0] , "\t" , "hg18_Sole_CpG_Shores" , "\t" , $GTFHash{$linenum-1}[2] , "_1" , "\t" , $GTFHash{$linenum-1}[3]-2000 , "\t" , $GTFHash{$linenum-1}[3] , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
 
 				if ($cpgcount[2] > 1) {print SHORES "\n";}
 				++$cpgcount[2];
-				print SHORES $GTFHash{$linenum-1}[0] , "\t" , $GTFHash{$linenum-1}[1] , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[3]-2000 , "\t" , $GTFHash{$linenum-1}[3] , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
-
-				if ($cpgcount[2] > 1) {print SHORES "\n";}
-				++$cpgcount[2];
-				print SHORES $GTFHash{$linenum-1}[0] , "\t" , $GTFHash{$linenum-1}[1] , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[4] , "\t" , $GTFHash{$linenum-1}[4]+2000 , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
+				print SHORES $GTFHash{$linenum-1}[0] , "\t" , "hg18_Sole_CpG_Shores" , "\t" , $GTFHash{$linenum-1}[2] , "_2" , "\t" , $GTFHash{$linenum-1}[4] , "\t" , $GTFHash{$linenum-1}[4]+2000 , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
 			}
 		}
 	}
@@ -198,38 +199,38 @@ while(<IN>){
 			# Entire Archipelago - starting and ending at the first and last island
 			if ($cpgcount[5] > 1) {print ARCHIPELAGOWITHOUTSHORES "\n";}
 			++$cpgcount[5];
-			print ARCHIPELAGOWITHOUTSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $archstart , "\t" , $archend , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+			print ARCHIPELAGOWITHOUTSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_Without_Outer_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[5]-1 , "\t" , $archstart , "\t" , $archend , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 
 			# Entire Archipelago - starting and ending at the outer shores
 			if ($cpgcount[4] > 1) {print ARCHIPELAGOWITHSHORES "\n";}
 			++$cpgcount[4];
-			print ARCHIPELAGOWITHSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $archstart - 2000 , "\t" , $archend + 2000, "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+			print ARCHIPELAGOWITHSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_With_Outer_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[4]-1 , "\t" , $archstart - 2000 , "\t" , $archend + 2000, "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 
 			# Archipelago Shores Only - CpG number will be that of the start of the archipelago's
 			# Outer Shore at the start
 			if ($cpgcount[6] > 1) {print ARCHIPELAGOSHORES "\n";}
 			++$cpgcount[6];
-			print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $archstart-2000 , "\t" , $archstart , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+			print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[4]-1, "_1" , "\t" , $archstart-2000 , "\t" , $archstart , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 
 			# Inner Shores
 			for(my $k = 0; $k < $archlineend - $archlinestart; $k++)
 			{
 				if ($cpgcount[6] > 1) {print ARCHIPELAGOSHORES "\n";}
 				++$cpgcount[6];
-				print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $GTFHash{$archlinestart+$k}[4] , "\t" , $GTFHash{$archlinestart+$k+1}[3] , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+				print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[4]-1, "_" , $k+2 , "\t" , $GTFHash{$archlinestart+$k}[4] , "\t" , $GTFHash{$archlinestart+$k+1}[3] , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 			}
 
 			# Outer Shore at the end
 			if ($cpgcount[6] > 1) {print ARCHIPELAGOSHORES "\n";}
 			++$cpgcount[6];
-			print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $archend , "\t" , $archend+2000 , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+			print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[4]-1, "_" , $archlineend-$archlinestart+2 , "\t" , $archend , "\t" , $archend+2000 , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 
 			# Archipelago Islands Only
 			for(my $j = 0; $j <= $archlineend - $archlinestart; $j++)
 			{
 				if ($cpgcount[3] > 1) {print ARCHIPELAGOISLANDS "\n";}
 				++$cpgcount[3];
-				print ARCHIPELAGOISLANDS $GTFHash{$archlinestart+$j}[0] , "\t" , $GTFHash{$archlinestart+$j}[1] , "\t" , $GTFHash{$archlinestart+$j}[2] , "\t" , $GTFHash{$archlinestart+$j}[3] , "\t" , $GTFHash{$archlinestart+$j}[4] , "\t" , $GTFHash{$archlinestart+$j}[5] , "\t" , $GTFHash{$archlinestart+$j}[6];
+				print ARCHIPELAGOISLANDS $GTFHash{$archlinestart+$j}[0] , "\t" , "hg18_CpG_Archipelagos_Islands" , "\t" , $GTFHash{$archlinestart+$j}[2] , "\t" , $GTFHash{$archlinestart+$j}[3] , "\t" , $GTFHash{$archlinestart+$j}[4] , "\t" , $GTFHash{$archlinestart+$j}[5] , "\t" , $GTFHash{$archlinestart+$j}[6];
 			}
 	
 			# Since the archipelago data has been printed, the variables can be reset
@@ -241,19 +242,20 @@ while(<IN>){
 		{
 			if ($cpgcount[0] > 1) {print ISLANDS "\n";}
 			++$cpgcount[0];
-			print ISLANDS $GTFHash{$linenum-1}[0] , "\t" , $GTFHash{$linenum-1}[1] , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[3] , "\t" , $GTFHash{$linenum-1}[4] , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
+			print ISLANDS $GTFHash{$linenum-1}[0] , "\t" , "hg18_Sole_CpG_Islands" , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[3] , "\t" , $GTFHash{$linenum-1}[4] , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
 
 			if ($cpgcount[1] > 1) {print ISLANDSANDSHORES "\n";}
 			++$cpgcount[1];
-			print ISLANDSANDSHORES $GTFHash{$linenum-1}[0] , "\t" , $GTFHash{$linenum-1}[1] , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[3]-2000 , "\t" , $GTFHash{$linenum-1}[4]+2000 , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
+			print ISLANDSANDSHORES $GTFHash{$linenum-1}[0] , "\t" , "hg18_Sole_CpG_Islands_And_Shores" , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[3]-2000 , "\t" , $GTFHash{$linenum-1}[4]+2000 , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
+
+			# Print Left Shore(1) and Right Shore(2)
+			if ($cpgcount[2] > 1) {print SHORES "\n";}
+			++$cpgcount[2];
+			print SHORES $GTFHash{$linenum-1}[0] , "\t" , "hg18_Sole_CpG_Shores" , "\t" , $GTFHash{$linenum-1}[2] , "_1" , "\t" , $GTFHash{$linenum-1}[3]-2000 , "\t" , $GTFHash{$linenum-1}[3] , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
 
 			if ($cpgcount[2] > 1) {print SHORES "\n";}
 			++$cpgcount[2];
-			print SHORES $GTFHash{$linenum-1}[0] , "\t" , $GTFHash{$linenum-1}[1] , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[3]-2000 , "\t" , $GTFHash{$linenum-1}[3] , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
-
-			if ($cpgcount[2] > 1) {print SHORES "\n";}
-			++$cpgcount[2];
-			print SHORES $GTFHash{$linenum-1}[0] , "\t" , $GTFHash{$linenum-1}[1] , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[4] , "\t" , $GTFHash{$linenum-1}[4]+2000 , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
+			print SHORES $GTFHash{$linenum-1}[0] , "\t" , "hg18_Sole_CpG_Shores" , "\t" , $GTFHash{$linenum-1}[2] , "_2" , "\t" , $GTFHash{$linenum-1}[4] , "\t" , $GTFHash{$linenum-1}[4]+2000 , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
 		}
 	}
 	$linenum++;
@@ -265,38 +267,38 @@ if($archlinestart <= $archlineend) # If end of an archipelago, print to archipel
 	# Entire Archipelago - starting and ending at the first and last island
 	if ($cpgcount[5] > 1) {print ARCHIPELAGOWITHOUTSHORES "\n";}
 	++$cpgcount[5];
-	print ARCHIPELAGOWITHOUTSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $archstart , "\t" , $archend , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+	print ARCHIPELAGOWITHOUTSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_Without_Outer_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[5]-1 , "\t" , $archstart , "\t" , $archend , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 
 	# Entire Archipelago - starting and ending at the outer shores
 	if ($cpgcount[4] > 1) {print ARCHIPELAGOWITHSHORES "\n";}
 	++$cpgcount[4];
-	print ARCHIPELAGOWITHSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $archstart - 2000 , "\t" , $archend + 2000, "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+	print ARCHIPELAGOWITHSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_With_Outer_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[4]-1 , "\t" , $archstart - 2000 , "\t" , $archend + 2000, "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 
 	# Archipelago Shores Only - CpG number will be that of the start of the archipelago's
 	# Outer Shore at the start
 	if ($cpgcount[6] > 1) {print ARCHIPELAGOSHORES "\n";}
 	++$cpgcount[6];
-	print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $archstart-2000 , "\t" , $archstart , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+	print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[4]-1, "_1" , "\t" , $archstart-2000 , "\t" , $archstart , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 
 	# Inner Shores
 	for(my $k = 0; $k < $archlineend - $archlinestart; $k++)
 	{
 		if ($cpgcount[6] > 1) {print ARCHIPELAGOSHORES "\n";}
 		++$cpgcount[6];
-		print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $GTFHash{$archlinestart+$k}[4] , "\t" , $GTFHash{$archlinestart+$k+1}[3] , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+		print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[4]-1, "_" , $k+2 , "\t" , $GTFHash{$archlinestart+$k}[4] , "\t" , $GTFHash{$archlinestart+$k+1}[3] , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 	}
 
 	# Outer Shore at the end
 	if ($cpgcount[6] > 1) {print ARCHIPELAGOSHORES "\n";}
 	++$cpgcount[6];
-	print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , $GTFHash{$archlinestart}[1] , "\t" , $GTFHash{$archlinestart}[2] , "\t" , $archend , "\t" , $archend+2000 , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
+	print ARCHIPELAGOSHORES $GTFHash{$archlinestart}[0] , "\t" , "hg18_CpG_Archipelagos_Shores" , "\t" , "CpG_Archipelago_" , $cpgcount[4]-1, "_" , $archlineend-$archlinestart+2 , "\t" , $archend , "\t" , $archend+2000 , "\t" , $GTFHash{$archlinestart}[5] , "\t" , $GTFHash{$archlinestart}[6];
 
 	# Archipelago Islands Only
 	for(my $j = 0; $j <= $archlineend - $archlinestart; $j++)
 	{
 		if ($cpgcount[3] > 1) {print ARCHIPELAGOISLANDS "\n";}
 		++$cpgcount[3];
-		print ARCHIPELAGOISLANDS $GTFHash{$archlinestart+$j}[0] , "\t" , $GTFHash{$archlinestart+$j}[1] , "\t" , $GTFHash{$archlinestart+$j}[2] , "\t" , $GTFHash{$archlinestart+$j}[3] , "\t" , $GTFHash{$archlinestart+$j}[4] , "\t" , $GTFHash{$archlinestart+$j}[5] , "\t" , $GTFHash{$archlinestart+$j}[6];
+		print ARCHIPELAGOISLANDS $GTFHash{$archlinestart+$j}[0] , "\t" , "hg18_CpG_Archipelagos_Islands" , "\t" , $GTFHash{$archlinestart+$j}[2] , "\t" , $GTFHash{$archlinestart+$j}[3] , "\t" , $GTFHash{$archlinestart+$j}[4] , "\t" , $GTFHash{$archlinestart+$j}[5] , "\t" , $GTFHash{$archlinestart+$j}[6];
 	}
 	
 	# Since the archipelago data has been printed, the variables can be reset
@@ -314,6 +316,7 @@ else # Read is an island
 	++$cpgcount[1];
 	print ISLANDSANDSHORES $GTFHash{$linenum-1}[0] , "\t" , $GTFHash{$linenum-1}[1] , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[3]-2000 , "\t" , $GTFHash{$linenum-1}[4]+2000 , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
 
+	# Print Left Shore(1) and Right Shore(2)
 	if ($cpgcount[2] > 1) {print SHORES "\n";}
 	++$cpgcount[2];
 	print SHORES $GTFHash{$linenum-1}[0] , "\t" , $GTFHash{$linenum-1}[1] , "\t" , $GTFHash{$linenum-1}[2] , "\t" , $GTFHash{$linenum-1}[3]-2000 , "\t" , $GTFHash{$linenum-1}[3] , "\t" , $GTFHash{$linenum-1}[5] , "\t" , $GTFHash{$linenum-1}[6];
