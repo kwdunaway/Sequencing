@@ -1314,9 +1314,12 @@ sub fpkm_from_gtf_fpkmwig
 
 	print "FPKM from GTF and FPKMWIG: Loading GTFHash from GTF file.\n";
 	my %GTFHash;
+
+	# Processing GTF file into a hash to contain its data
 	while(<GTF>)
 	{
 		chomp;
+		# Splitting data into array and variables
 		my @line = split("\t",$_);
 		my $chrom = $line[0];
 		$source = $line[1];
@@ -1333,22 +1336,24 @@ sub fpkm_from_gtf_fpkmwig
 			$end = $start;
 			$start = $temp;
 		}
-		my $length = $end - $start;
-		my $flag = 1;
-		while($flag > 0)
+
+		# Pushing data into features
+		my $length = $end - $start; # Length of read
+		my $flag = 1; # Check if position contains data already in hash
+		while($flag > 0) 
 		{
-			if(exists $GTFHash{$chrom}{$feature}{$flag})
+			if(exists $GTFHash{$chrom}{$feature}{$flag}) # If data exists at this feature and segment, increase flag to avoid overwrite
 			{
 				$flag++;
 			}
-			else
+			else # Data does not exist at this segment yet, push data into array
 			{
 				push(@{$GTFHash{$chrom}{$feature}{$flag}},$start);
 				push(@{$GTFHash{$chrom}{$feature}{$flag}},$end);
 				push(@{$GTFHash{$chrom}{$feature}{$flag}},$length);
 				push(@{$GTFHash{$chrom}{$feature}{$flag}},$strand);
 				push(@{$GTFHash{$chrom}{$feature}{$flag}},0);
-				$flag = 0;
+				$flag = 0; # End while loop
 			}
 		}
 	}
@@ -1360,24 +1365,26 @@ sub fpkm_from_gtf_fpkmwig
 
 	while(@Chr)
 	{
-		# my %FPKMHash;  #holds FPKM from IN file for small selected area
 		my $chr = shift(@Chr);
 
 		# opens infile and removes first two lines from it (header lines)
 		my $inputfile = $inputprefix . $chr . ".wig";
 		open(IN, "<$inputfile") or die "Error: FPKM from GTF and FPKMWIG: cannot open $inputfile IN infile";
-		<IN>; <IN>;
+		<IN>; <IN>; # Skip first two lines
 
 		my %FeatureHash;
 		my $chrom_name = "chr" . $chr;
+		my %StartHash;
 
 		print "FPKM from GTF and FPKMWIG: Loading Chr$chr start positions into FeatureHash.\n";
-		my %StartHash;
-		# Makes a StartHash and a FeatureHash for the chromosome
-		foreach my $feature (keys %{$GTFHash{$chrom_name}}) 
+		# Makes a StartHash and a FeatureHash for the chromosome by processing every feature
+		foreach my $feature (keys %{$GTFHash{$chrom_name}})
 		{ 
-			my $feature_start = 999999999999;
-			my $feature_end = 0;
+
+			my $feature_start = 999999999999; # Initialize start so that a flag start must replace it in the coming loop
+			my $feature_end = 0; # Initialize end so that a flag end must replace it in the coming loop
+			
+			# Use the first start and last end out of all flags as the start and end of the feature
 			foreach my $segnumber (keys %{$GTFHash{$chrom_name}{$feature}})
 			{ 
 				if($GTFHash{$chrom_name}{$feature}{$segnumber}[0] < $feature_start)
@@ -1389,6 +1396,7 @@ sub fpkm_from_gtf_fpkmwig
 					$feature_end = $GTFHash{$chrom_name}{$feature}{$segnumber}[1];
 				}		
 			}
+
 			# Adds start and end to Feature Hash
 			push(@{$FeatureHash{$feature}},$feature_start);
 			push(@{$FeatureHash{$feature}},$feature_end);
@@ -1400,12 +1408,13 @@ sub fpkm_from_gtf_fpkmwig
 
 		my @SortedFeatureArray;
 		# Fills @SortedFeatureArray with list (in order of starting position)
-		foreach my $startpos (sort { $a <=> $b } keys %StartHash)
+		foreach my $startpos (sort { $a <=> $b } keys %StartHash) # For every start position
 		{
-			while(exists $StartHash{$startpos}[0])
+			while(exists $StartHash{$startpos}[0]) # While a feature exists at this start
 			{
-			push(@SortedFeatureArray,$StartHash{$startpos}[0]);
-			shift(@{$StartHash{$startpos}});
+				# Push the feature onto the sorted array and shift it out of the hash
+				push(@SortedFeatureArray,$StartHash{$startpos}[0]);
+				shift(@{$StartHash{$startpos}});
 			}
 		}
 	
@@ -1414,9 +1423,11 @@ sub fpkm_from_gtf_fpkmwig
 		my $lastendpos = 0;
 
 		print "FPKM from GTF and FPKMWIG: Analyzing Chromosome $chr \n";
+		# Open FPKMWIG file pertaining to current chromosome
 		while(<IN>)
 		{
 			chomp;
+			# Splitting data into array and variables
 			my @InArray = split("\t",$_);
 			my $currentpos = $InArray[0];
 			my $currentheight = $InArray[1];
@@ -1426,7 +1437,7 @@ sub fpkm_from_gtf_fpkmwig
 			else {last;}
 		
 			my $sortedfeaturepointer = 0;
-			# while current position is not before the start of the current hash
+			# while current position is not before the start of the feature hash
 			while($FeatureHash{$SortedFeatureArray[$sortedfeaturepointer]}[0] 					< $currentpos)
 			{
 				my $feature = $SortedFeatureArray[$sortedfeaturepointer];
@@ -1436,8 +1447,6 @@ sub fpkm_from_gtf_fpkmwig
 				if($currentpos > $FeatureHash{$feature}[1])
 				{
 					shift(@SortedFeatureArray);
-					# my $feature_finished = shift(@SortedFeatureArray);
-					# print "Finished Feature: " , $feature_finished , "\t", $FeatureHash{$feature}[1] , "\n";
 					if(exists $SortedFeatureArray[0]){next;}
 					else {last;}
 				}		
@@ -1452,48 +1461,53 @@ sub fpkm_from_gtf_fpkmwig
 				my $segnumber = 1;
 				while(exists $GTFHash{$chrom_name}{$feature}{$segnumber})
 				{
+					# If current position still between start and end of feature
 					if($currentpos > $GTFHash{$chrom_name}{$feature}{$segnumber}[0] && $currentpos < $GTFHash{$chrom_name}{$feature}{$segnumber}[1])
 					{
-						$GTFHash{$chrom_name}{$feature}{$segnumber}[4] = $GTFHash{$chrom_name}{$feature}{$segnumber}[4] + $currentheight;
+						$GTFHash{$chrom_name}{$feature}{$segnumber}[4] = $GTFHash{$chrom_name}{$feature}{$segnumber}[4] + $currentheight; # Add current height to height in feature
 					}
 					++$segnumber;
 				}			
-				++$sortedfeaturepointer;
+				++$sortedfeaturepointer; # Move to next feature in sorted array
 			}
 		}
 		close IN;
 	
 		print "FPKM from GTF and FPKMWIG: Printing $chrom_name to Outfile\n\n";
-		#Print FPKM's to Outfile
+		# Print FPKM's to Outfile
 		foreach my $feature (sort keys %{$GTFHash{$chrom_name}})
 		{ 
 			my $featurelength = 0;
 			my $FPKM = 0;
-			my $Chr_total_position = $chrom_name . ":" . $FeatureHash{$feature}[0] . "-" . $FeatureHash{$feature}[1];
+			my $Chr_total_position = $chrom_name . ":" . $FeatureHash{$feature}[0] . "-" . $FeatureHash{$feature}[1]; # e.g. chrX:12345-23456
 			my $Chrpositions = "";
 			my $loopcount = 0;
 			foreach my $segnumber (keys %{$GTFHash{$chrom_name}{$feature}})
 			{
+				# Add a "/" for additional segments
 				if ($loopcount > 0)
 				{
 					$Chrpositions = $Chrpositions . " / ";
 				}
 				++$loopcount;
-				$featurelength = $featurelength + $GTFHash{$chrom_name}{$feature}{$segnumber}[2];
-				$FPKM = $FPKM + $GTFHash{$chrom_name}{$feature}{$segnumber}[4];
-				$Chrpositions = $chrom_name . ":" . $GTFHash{$chrom_name}{$feature}{$segnumber}[0] . "-" . $GTFHash{$chrom_name}{$feature}{$segnumber}[1];
+				$featurelength = $featurelength + $GTFHash{$chrom_name}{$feature}{$segnumber}[2]; # Add the segment lengths to the feature length to get the total feature length
+				$FPKM = $FPKM + $GTFHash{$chrom_name}{$feature}{$segnumber}[4]; # Add all the segments heights to the FPKM score
+				$Chrpositions = $chrom_name . ":" . $GTFHash{$chrom_name}{$feature}{$segnumber}[0] . "-" . $GTFHash{$chrom_name}{$feature}{$segnumber}[1]; # Will give the positions of the segments as opposed to the full feature
 			}
+			
+			# Calculate the FPKM score
 			if($featurelength > 0)
 			{
-				$FPKM = (1000 * $FPKM) / $featurelength;
+				$FPKM = (1000 * $FPKM) / $featurelength; 
 				$FPKM = sprintf("%.4f", $FPKM);	
 			} 
-			else
+			else # If no feature, then FPKM = 0;
 			{
 				$FPKM = 0;
 			}
 			# Columns (tab-delimited)
-			# Feature  TotalPosition  Positions  FeatureLength(s)  Strand  FPKM
+			# 1		2		3		4			5	6
+			# Feature	TotalPosition	Positions	FeatureLength(s)	Strand	FPKM
 			print OUT "$feature\t$Chr_total_position\t$Chrpositions\t$featurelength\t$GTFHash{$chrom_name}{$feature}{1}[3]\t$FPKM\n";
 		}	
 	}
