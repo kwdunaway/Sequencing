@@ -43,39 +43,47 @@ use strict; use warnings;
 ################################################################################################
 
 ###########################################################################
-#             (0) Determine Read Length from Fastq.gz File                #
+#       (0) Determine Read Length from Gzipped Fastq (.fq.gz) File        #
 ###########################################################################
 
 sub fastqgz_readlength 
 {
-	my ($fastqgzfile) = @_;
+	my ($fastqgzfile) = @_; # Input is "filename.fq.gz"
+	print "Read Length from .fq.gz File: Obtaining read length from " , $fastqgzfile , "\n";
+	# Uses gunzip to determine read length from the second line of the file
 	my $readlength = `gunzip -c $fastqgzfile | head -n 2 | tail -n 1 | tr -d '\n'| wc -m | tr -d '\n'`;
-
+	print "Read Length from .fq.gz File: Finished. Read length is ", $readlength ," \n\n";
 	return $readlength;
 }
 
 ###########################################################################
-#             (0.1) Determine Read Length from Fastq File                 #
+#          (0.1) Determine Read Length from Fastq (.fq) File              #
 ###########################################################################
 
 sub fastq_readlength 
 {
-	my ($fastqfile) = @_;
-	my $readlength = `head -n 2 | tail -n 1 | tr -d '\n'| wc -m | tr -d '\n'`;
-
+	my ($fastqfile) = @_; # Input is "filename.fq"
+	print "Read Length from .fq File: Obtaining read length from " , $fastqfile , "\n";
+	# Determines read length from the second line of the file
+	my $readlength = `head -n 2 $fastqfile | tail -n 1 | tr -d '\n'| wc -m | tr -d '\n'`;	
+	print "Read Length from .fq File: Finished. Read length is ", $readlength ," \n\n";
 	return $readlength;
 }
 
 ###########################################################################
-#               (0.2) Determine Read Count from Fastq File                #
+#            (0.2) Determine Read Count from Fastq (.fq) File             #
 ###########################################################################
 
 sub fastq_readcount
 {
-	my ($fastqfile) = @_;
+	my ($fastqfile) = @_; #Input is "filename.fq"
+	print "Read Count from .fq File: Obtaining read count from " , $fastqfile , "\n";
+	# Uses word count to find the read count and divides by 4 to return the actual read count
 	my $readcount = `wc -l $fastqfile | tr -d '\n'`;
-	die "Fastq file format error" if $readcount % 4 != 0;
-	return $readcount/4;
+	die "Error: Read Count from .fq File: Fastq file format error" if $readcount % 4 != 0;
+	my $truereadcount = $readcount/4;
+	print "Read Count from .fq File: Finished. Read count is " , $truereadcount , "\n";
+	return $truereadcount;
 }
 
 ###########################################################################
@@ -84,8 +92,11 @@ sub fastq_readcount
 
 sub elandext_readcount
 {
-	my ($elandextfile) = @_;
+	my ($elandextfile) = @_; #Input is Eland Extended file name
+	print "Read Count from Eland Extended File: Obtaining read count from " , $elandextfile , "\n";
+	# Uses word count to return the read count
 	my $readcount = `wc -l $elandextfile`;
+	print "Read Count from Eland Extended File: Finished. Read count is " , $readcount , "\n";
 	return $readcount;
 }
 
@@ -95,27 +106,28 @@ sub elandext_readcount
 
 sub add_path 
 {
-	my ($addtoPATH) = @_;
-
-	print "\nAdding $addtoPATH to PATH\n\n";
+	my ($addtoPATH) = @_; # Input is path to add
+	print "Add to PATH: Adding " , $addtoPATH , " to PATH for rest of this script.\n";
 	$ENV{'PATH'} = $ENV{'PATH'} . ":" . $addtoPATH;
+	print "Add to PATH: Finished. Added " , $addtoPATH , " to PATH for rest of this script.\n\n";	
 }
 
 ###########################################################################
 #              (2) Combine and Filter Zipped Fastq Files                  #
-#  Input: Raw file folder (only zipped files and the extension is .fq.gz) #
+#  Input: Raw data file folder (extension is .fq.gz and only .fq.gz)      #
 # Output: Returns: Filtered and Combined into one .fq file                #
 ###########################################################################
 
 sub filter_zip 
 {
-	my ($rawfqfolder) = @_;
-	my $filtered_fastq = $rawfqfolder . "filtered.fq";
-
-	print "Filtering $rawfqfolder files and outputting to $filtered_fastq\n";
-	`gunzip -c $rawfqfolder*.gz | grep -A 3 '^@.* [^:]*:N:[^:]*:' |   grep -v \"^--\$\" >  $filtered_fastq\n\n`;
-
-	return $filtered_fastq;
+	my ($rawfqfolder) = @_; # Input is path to folder containing data with extension .fq.gz
+	my $filtered_fastq = $rawfqfolder . "filtered.fq"; # Filtered file is named "filtered.fq" in input folder
+	print "Filter zipped fastq files: Filtering $rawfqfolder files and outputting to $filtered_fastq\n";
+	# Uses gunzip and grep to filter the data into "filtered.fq"
+	my $comline = "gunzip -c " . $rawfqfolder . "*.gz | grep -A 3 '^@.* [^:]*:N:[^:]*:' |   grep -v \"^--\$\" >  " . $filtered_fastq;
+	`$comline`;
+	print "Filter zipped fastq files: Finished. Output to $filtered_fastq\n\n";
+#	return $filtered_fastq;
 }
 	
 ###########################################################################
@@ -131,17 +143,20 @@ sub filter_zip
 
 sub run_bowtie 
 {
+	# Input (see subroutine description)
 	my ($ExperimentTopDir, $BowtiePrefix, $mm9path, $filtered_fastq) = @_;
-	print "Making $ExperimentTopDir directory in current directory\n";
+
+	# Making folder to contain output
+	print "Bowtie: Making $ExperimentTopDir directory in current directory\n";
 	`mkdir $ExperimentTopDir\n`;
 
+	# File names for non-aligned and aligned reads files (e.g. $ExperimentTopDir/$BowtiePrefix_NonAligned.fq)
 	my $nonalignedreadsfile = $ExperimentTopDir . $BowtiePrefix . "_NonAligned.fq";
 	my $alignedpreseparationfile = $ExperimentTopDir . $BowtiePrefix . "_alignedpreseparation.txt";
 
-	print "Running Bowtie, separating aligned reads to $alignedpreseparationfile and non-aligned reads to $nonalignedreadsfile\n";
+	# Run Bowtie
+	print "Bowtie: Running Bowtie, separating aligned reads to $alignedpreseparationfile and non-aligned reads to $nonalignedreadsfile\n";
 	`bowtie -p 4 -M 1 -k 1 --chunkmbs 256 --strata --best --un $nonalignedreadsfile $mm9path $filtered_fastq $alignedpreseparationfile\n\n`;
-
-	return ($nonalignedreadsfile, $alignedpreseparationfile);
 }
 
 ###########################################################################
@@ -156,38 +171,38 @@ sub run_bowtie
 
 sub separate_repeats 
 {
+	# Input (see subroutine description)
 	my ($ExperimentTopDir, $BowtiePrefix, $alignedpreseparationfile) = @_;
 
+	# File names for unique and repeat reads files (e.g. $ExperimentTopDir/$BowtiePrefix_Uniq.txt)
 	my $uniqalignedreadsfile = $ExperimentTopDir . $BowtiePrefix . "_Uniq.txt";
 	my $repalignedreadsfile = $ExperimentTopDir . $BowtiePrefix . "_Repeat.txt";
 
-        print "Separating aligned reads between unique reads to $uniqalignedreadsfile and repeat reads to $repalignedreadsfile\n";
+	print "Separate Repeats and Uniques: separating aligned reads between unique reads to $uniqalignedreadsfile and repeat reads to $repalignedreadsfile\n";
 
-	open(IN, "<$alignedpreseparationfile") or die "cannot open $alignedpreseparationfile infile";
-	open(UNIQOUT, ">$uniqalignedreadsfile") or die "cannot open $uniqalignedreadsfile outfile";
-	open(REPOUT, ">$repalignedreadsfile") or die "cannot open $repalignedreadsfile outfile";
+	# Open Files
+	open(IN, "<$alignedpreseparationfile") or die "Error: Separate Repeats and Uniques: cannot open $alignedpreseparationfile infile";
+	open(UNIQOUT, ">$uniqalignedreadsfile") or die "Error: Separate Repeats and Uniques: cannot open $uniqalignedreadsfile outfile";
+	open(REPOUT, ">$repalignedreadsfile") or die "Error: Separate Repeats and Uniques: cannot open $repalignedreadsfile outfile";
 
-	while (<IN>) 
-	{
+	while (<IN>) {
 		chomp;
 		my @line = split ("\t", $_);
-		if($line[6] > 0) 
-		{
+		# Check if column 7 is greater than 0, yes means repeat read, no means unique read
+		if($line[6] > 0) {
 			print REPOUT $_, "\n";
 		}
-		else 
-		{
+		else {
 			print UNIQOUT $_, "\n";
 		}
 	}
 
-        print "Finished Separating\n";
-
+	# Close Files
 	close IN;
 	close UNIQOUT;
 	close REPOUT;
 
-	return ($uniqalignedreadsfile, $repalignedreadsfile);
+	print "Separate Repeats and Uniques: Finished.\n";
 }
 
 ###########################################################################
@@ -197,15 +212,18 @@ sub separate_repeats
 #                                                                         #
 #  This subroutine takes sequences in Eland Extended format (also known   #
 #  as s_#_export.txt files) and produces multiple BED files which can     #
-#  be used to analyze the data.                                           #
+#  be used to analyze the data. Requires position in array of chromosome  #
+#  number, position, and strand (+,-)                                     #
 #                                                                         #
 #  Input: 1) Input file name                                              #
-#         2) Output dir name                                              #
-#         3) Read length                                                  #
-#         4) Chromosome array number                                      #
-#         5) Position array number                                        #
-#         6) Strand array number                                          #
-#         7) Maximum Duplicate Reads (1 for no duplicates)                #
+#         2) Top folder path of experiment (Folder to contain)            #
+#         3) Output directory name                                        #
+#         4) Starting Read Length (Current)                               #
+#         5) Final Read Length (Final to replace current)                 #
+#         6) Chromosome array number                                      #
+#         7) Position array number                                        #
+#         8) Strand array number                                          #
+#         9) Maximum Duplicate Reads (1 for no duplicates)                #
 #                                                                         #
 # Output: Creates directory containing:                                   #
 #           1) BED files for each chromosome                              #
@@ -216,70 +234,80 @@ sub separate_repeats
 
 sub elandext_to_bed 
 {
-	print "\nBeginning conversion of Eland Extended format to BED format\n";
-	# Input
-	my ($infile, $ExperimentTopDir, $outprefix, $basereadlength, $finalreadlength, $chr, $pos, $strand, $MaxDupReads) = @_;
+	print "\nElandExt to BED: Beginning conversion of Eland Extended format to BED format\n";
+	# Input (see subroutine description)
+	my ($infile, $ExperimentTopDir, $FilePrefix, $basereadlength, $finalreadlength, $chr, $pos, $strand, $MaxDupReads) = @_;
 
-	my $outdir = $ExperimentTopDir . "/" . $FilePrefix . "_bed";
-	my $minusstrandlength = $finalreadlength - $basereadlength;
-	my %Count;
-	my %Files;
-	$totalcount = 0;
+	# Variable Declarations
+	my $outdir = $ExperimentTopDir . $FilePrefix . "_bed"; # Output directory name
+	my $minusstrandlength = $finalreadlength - $basereadlength; # Calculation of the minus strand length
+	my %Count; # Keys = chromosome number, Values = number of mapped reads for specific chromosome
+	my %Files; # Contains files with each chromosome
+	my $totalcount = 0; # Total number of mapped reads
 
-	# Makes Output Directory
-	print "Making $outdir directory\n";
+	# Makes Output Directory if does not exist
+	print "ElandExt to BED: Making $outdir directory if does not exist\n";
 	if (! -d $outdir) 
 	{ 
-		`mkdir $outdir`; #creates dir if one doesn't exist
-		if (! -d $outdir) { die "directory ($outdir) does not exist"} 
+		`mkdir $outdir`;
+		if (! -d $outdir) { die "Error: ElandExt to BED: directory ($outdir) still does not exist"} 
 	}
 
-	open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be read
-	print "Processing data into each chromosome output file in BED format\n";
+	open(IN, "<$infile") or die "Error: ElandExt to BED: cannot open $infile infile"; 
+	print "ElandExt to BED: Processing data into each chromosome output file in BED format\n";
+
+	############################################################################
+	#                      Processing Eland Extended File                      #
+	############################################################################
 	while (<IN>)
 	{
 		chomp;
-		@array = split("\t", $_); # Splitting data into array
+		my @array = split("\t", $_); # Splitting tab-delimited data into array
 		my $chrom = $array[$chr];
 		my $readstrand = $array[$strand];
-		$totalcount++; # Add to total mapped reads
-		#If outputfile has not been for the chromosome, make it
-		if(! exists $Count(total)){
-			$Count($chrom) = 0;
-			my $filename = $outdir . "/" . $outprefix . "_" . $chrom . ".bed";
-			open($Files($chrom), ">$filename") or die "cannot open $filename outfile";	
+		$totalcount++; # Add to total mapped reads (each line is a read)
+
+		#If output bed file has not been created for the chromosome, create it
+		if(! exists $Count{$chrom}){
+			$Count{$chrom} = 0; # Initialize read count for this chromosome 
+			my $filename = $outdir . "/" . $FilePrefix . "_" . $chrom . ".bed";
+			open($Files{$chrom}, ">$filename") or die "cannot open $filename chromosome output file";	
 		}
-		my $printfile = $Files($chrom);
-		$Count($chrom)++;
-		if($readstrand == "+"){
-			print {$Files($chrom)} $chrom , "\t" , $array[$pos] , "\t" , $array[$pos] + $finalreadlength, "\t", $outprefix , "\t", "0", "\t" , $readstrand , "\n";
+		my $printfile = $Files{$chrom};
+		$Count{$chrom}++; # Add to number of mapped reads for the chromosome
+
+		# Print line to bed file according to whether the strand is + or -
+		if($readstrand eq "+"){
+			print {$Files{$chrom}} $chrom , "\t" , $array[$pos] , "\t" , $array[$pos] + $finalreadlength, "\t", $FilePrefix , "\t", "0", "\t" , $readstrand , "\n";
 		}
-		elsif($readstrand == "-"){
-			print {$Files($chrom)} $chrom , "\t" , $array[$pos] - $minusstrandlength, "\t" , $array[$pos] + $basereadlength, "\t", $outprefix , "\t", "0", "\t" , $readstrand , "\n";
+		elsif($readstrand eq "-"){
+			print {$Files{$chrom}} $chrom , "\t" , $array[$pos] - $minusstrandlength, "\t" , $array[$pos] + $basereadlength, "\t", $FilePrefix , "\t", "0", "\t" , $readstrand , "\n";
 		}
-		else {die "Strand is not + nor -, it is $readstrand";}
-		}
+		else {die "Error: ElandExt to BED: Strand in read is not + nor -, it is $readstrand";}
+	}
 	close IN;
-	print "Finished outputting data to each BED file\n";
+	print "ElandExt to BED: Finished outputting data to each BED file\n";
 
 
 	############################################################################
 	#                  Printing statistics to Stats Outfile                    #
 	############################################################################
-
-	print "Printing statistics to ", $chr_out[28], "\n";
-	my $filename = $ExperimentTopDir . "/" . "Stats_" . $outprefix . ".txt";
-	open(STATS, ">$filename") or die "cannot open $filename outfile";	
-	foreach $key (sort keys %Files) {
-		print STATS "Number of reads mapped " , $key , " is:\t" , $Count($key) , "\n";
-		close {$Files($chrom)};
-		my $bedfile = $outdir . "/" . $outprefix . "_" . $key . ".bed";
-		sort_bed($bedfile);
-		eliminate_bed_dups($bedfile, $MaxDupReads);
+	
+	# Statistics file name is Stats_fileprefix.txt in the specified folder
+	my $filename = $ExperimentTopDir . "/" . "Stats_" . $FilePrefix . ".txt";
+	print "ElandExt to BED: Printing statistics to ", $filename, "\n";
+	open(STATS, ">$filename") or die "Error: ElandExt to BED: cannot open $filename statistics output file";	
+	# While printing reads mapped to each chromosome, sort each bed file and eliminate duplicate reads
+	foreach my $key (sort keys %Files) {
+		print STATS "Number of reads mapped " , $key , " is:\t" , $Count{$key} , "\n";
+		close $Files{$key};
+		my $bedfile = $outdir . "/" . $FilePrefix . "_" . $key . ".bed"; # Name of BED file
+		sort_bed($bedfile); # Sort BED file
+		eliminate_bed_dups($bedfile, $MaxDupReads); # Eliminate unwanted duplicate reads
 	}
 	print STATS "\nTotal Number of Total mapped reads is:\t", $totalcount, "\n";
 	close STATS;
-	print "Finished conversion of Eland Extended to BED format\n";
+	print "ElandExt to BED: Finished conversion of Eland Extended to BED format\n\n";
 }
 
 ###########################################################################
@@ -290,17 +318,20 @@ sub elandext_to_bed
 
 sub sort_bed
 {
-	print "Sorting BED files\n";
 	my ($bedfile) = @_;
-	my $temp = $bedfile . "_sorted";
-	`sort -n +1 -2 $bedfile > $temp`;
-	`rm $bedfile`;
-	`mv $temp $bedfile`;
+	my $temp = $bedfile . "_sorted"; # Creates temporary name for the sorted bed file
+	print "Sort BED: Sorting BED file $bedfile\n";
+	`sort -n +1 -2 $bedfile > $temp`; # Numerically sort bed file contents using command line
+	# Replace unsorted bed file with sorted bed file
+	`rm $bedfile`; 
+	`mv $temp $bedfile`; 
+	print "Sort BED: Finished.\n";
 }
 
 ###########################################################################
 #               (7) Eliminate Duplicate Reads in BED Files                #
-# Checks BED files for duplicate reads and deletes the duplicates         #
+# Checks BED files for duplicate reads and deletes the duplicates.        #
+# BED file must be sorted.                                                #
 #                                                                         #
 #  Input: 1) Sorted BED File (with 6 fields)                              #
 #         2) Maximum Duplicate Reads allowed (1 for no duplicates)        #
@@ -311,18 +342,17 @@ sub sort_bed
 
 sub eliminate_bed_dups
 {
-	print "Eliminating duplicates based on maximum allowed duplicate reads\n";
-	# Input
+	# Input (see subroutine description)
 	my ($bedfile, $MaxDupReads) = @_;
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
 	##################################################
 	
-	my $temp = $bedfile . "_nodups"; # Temporary output file
+	my $temp = $bedfile . "_nodups"; # Temporary name for output file
 
-	open(IN, "<$bedfile") or die "cannot open $bedfile bed file";
-	open(OUT, ">$temp") or die "cannot open $temp temp file";
+	open(IN, "<$bedfile") or die "Error: Eliminate Duplicate Reads: cannot open $bedfile bed file";
+	open(OUT, ">$temp") or die "Error: Eliminate Duplicate Reads: cannot open $temp temp file";
 
 	my $linenum = 1; # Record line number(according to output file)
 	# Check if lines are the same; if so, duplicates
@@ -335,11 +365,12 @@ sub eliminate_bed_dups
 	#            Checking for Duplicates             #
 	##################################################
 
-	# Retrieve data for first line
+	print "Eliminate Duplicate Reads: Eliminating duplicate reads in $bedfile\n";
+	# Retrieve data for first line and split into array
 	$_ = <IN>;
 	$data{$linenum} = $_;
 	my @line = split("\t", $_);
-	print OUT $line[0], "\t", $line[1], "\t", $line[2], "\t", $line[3], "\t", 			$line[4], "\t", $line[5];
+	print OUT $line[0], "\t", $line[1], "\t", $line[2], "\t", $line[3], "\t", $line[4], "\t", $line[5];
 	$linenum++;
 
 	while (<IN>)
@@ -351,21 +382,23 @@ sub eliminate_bed_dups
 		if ($data{$linenum-1} ne $data{$linenum})
 		{
 			print OUT $line[0], "\t", $line[1], "\t", $line[2], "\t", $line[3], "\t", 				$line[4], "\t", $line[5];
-			$DupCount = 1;
+			$DupCount = 1; # Resets duplicate counter
 			$linenum++; 
 		}
+		# If current line equals previous line but maximum allowed duplicates is not reached, print to output
 		elsif ($DupCount < $MaxDupReads)
 		{
 			print OUT $line[0], "\t", $line[1], "\t", $line[2], "\t", $line[3], "\t", 					$line[4], "\t", $line[5];
 			$DupCount++;
 			$linenum++; 
 		}
+		# If current line equals previous line and maximum allowed duplicates has been reached, do not print to output and do not advance line number. Add to data on number of duplicate reads deleted.
 		elsif ($DupCount >= $MaxDupReads)
 		{
-			$TotalDupReads++;
-			if ($DupCount == $MaxDupReads)
+			$TotalDupReads++; # Total duplicate reads deleted
+			if ($DupCount == $MaxDupReads) # Count once per position
 			{
-				$TotalDupPositions++;
+				$TotalDupPositions++; # Total number of unique reads with duplicates
 			}
 			$DupCount++;
 		}
@@ -374,58 +407,71 @@ sub eliminate_bed_dups
 	close(IN);
 	close(OUT);
 
+	# Replace input file with new file
 	`rm $bedfile`;
-	`mv $temp $bedfile`;
+	`mv $temp $bedfile`; 
 	
-	print "Finished removing duplicate reads from BED files\n";
+	print "Eliminate Duplicate Reads: Finished. Total duplicate reads deleted is $TotalDupReads. Total number of unique reads with duplicates is $TotalDupPositions.\n";
 
+	# Returns variables with statistics on reads deleted
 	return ($TotalDupReads, $TotalDupPositions);
 }
 
-########################################################################################
-#                   (8) Extend Read Length of BED Files                                #
-# Takes a folder of bed files and creates a new one with read length                   #
-# extended directionally based on arguments input on command line.                     #
-#                                                                                      #
-#  Input: 1) Input Bed File prefix (ex: DY_Chr)                                        #
-#         2) Output Bed prefix without Chr (ex: NewDY will make NewDY_Chr*.bed files)  #
-#         3) Read Length extension (ex: 97)(added to old read length)                  #
-#                                                                                      #
-# Output: Extended Read Length BED Files                                               #
-########################################################################################
+###########################################################################
+#                   (8) Extend Read Length of BED Files                   #
+# Takes a folder of bed files and creates a new one with read length      #
+# extended directionally based on arguments input on command line.        #
+# Input files must end with "chr*.bed" (* is chromosome number)           #
+#                                                                         #
+#  Input: 1) Input Bed File prefix (ex: DY specifies DY_chr*.bed)         #
+#         2) Output Bed prefix (ex: NewDY will make NewDY_chr*.bed)       #
+#         3) Read Length extension (ex: 97)(added to old read length)     #
+#                                                                         #
+# Output: Extended Read Length BED Files                                  #
+###########################################################################
 
 sub extend_bed_read_length
 {
-	# Input
-	my ($inputbedprefix, $outputbedprefix, $readlengthextension) = @_;
+	# Input (see subroutine description)
+	my ($inputprefix, $outputbedprefix, $readlengthextension) = @_;
 
-	print "Beginning extension of read lengths in BED files by $readlengthextension\n";
+	print "Extend Read Length: Beginning extension of read lengths in BED files by $readlengthextension\n";
 
-	my @Chr; 	# array that contains all the the names of the mouse chromosomes
-	for (my $n = 1; $n< 20; $n++)
-	{
-		push(@Chr, $n);
+	die "Error: Extend Read Length: Input BED prefix ($inputprefix) is same as the output BED prefix ($outputbedprefix).\n" if $inputprefix eq $outputbedprefix;
+
+	# Scan BED directory for number of chromosome files
+	my @Chr; # Holds all the chromosome numbers (e.g. 19, M)
+	my $filedir = $inputprefix;
+	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path from the input prefix
+	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+	@files = grep /hr(.+)\.bed/, @files; # Takes only the files with "hr*.bed"
+
+	foreach my $file (@files) {
+		$file =~ /hr(.+)\.bed/; # For each of those files, extract the chromosome number
+		push (@Chr, $1); # Add to list of chromosome numbers
 	}
-	push(@Chr, "M");
-	push(@Chr, "X");
-	push(@Chr, "Y");
+	@Chr = sort @Chr; # Sort list of chromosome numbers
 
+	# For every chromosome number detected, look for an input bed file with specified chromosome number and extend read length
 	while(@Chr)
 	{
+		# File name creation and opening of files
 		my $chr = shift(@Chr);
-		my $inputfile = $inputbedprefix . $chr . ".bed";
-		open(IN, "<$inputfile") or die "cannot open $inputfile infile";
-		my $outfile = $outputbedprefix . "_Chr" . $chr . ".bed";
-		open(OUT, ">$outfile") or die "cannot open $outfile outfile";
+		my $inputfile = $inputprefix . "_chr" . $chr . ".bed";
+		open(IN, "<$inputfile") or die "Error: Extend Read Length: cannot open $inputfile infile";
+		my $outfile = $outputbedprefix . "_chr" . $chr . ".bed";
+		open(OUT, ">$outfile") or die "Error: Extend Read Length: cannot open $outfile outfile";
 
-		print "Extending read lengths in $inputfile\n";
+		print "Extend Read Length: Extending read lengths in $inputfile\n";
 
+		# Open input bed file pertaining to the specified chromosome number
 		while(<IN>)
 		{
 			chomp;
     			my @line = split ("\t", $_);
-			my $start = $line[1];
-			my $end = $line[2];
+			my $start = $line[1]; # Column 2: Start location of input read
+			my $end = $line[2]; # Column 3: End location of input read
+			# Extend according to if strand is + or -
 			if($line[5] eq "+")
 			{
 				my $end = $line[2]+$readlengthextension;
@@ -438,59 +484,72 @@ sub extend_bed_read_length
 				print OUT $line[0],"\t",$start,"\t",$line[2],"\t",$line[3],"\t",
 					$line[4],"\t",$line[5],"\n";
 			}
-			else {die "$line[5] does not equal + or - \n";}
+			else {die "Error: Extend Read Length: $line[5] does not equal + or - \n";}
 		}
 
 		close(IN);
 		close(OUT);
 	}
-	print "Finished read length extensions\n";
+	print "Extend Read Length: Finished read length extensions\n";
 }
 
-########################################################################################
-#            (9) Change Read Length of BED Files (Choose Read Length)                  #
-# Takes a folder of bed files and creates a new one with read length based on          #
-# arguments input on command line (This is a version of extend_bed_read_length).       #
-#                                                                                      #
-#  Input: 1) Input Bed File prefix (ex: DY_Chr)                                        #
-#         2) Output Bed prefix without Chr (ex: NewDY will make NewDY_Chr*.bed files)  #
-#         3) New Read Length (ex: 97)                                                  #
-#                                                                                      #
-# Output: New Read Length BED Files                                                    #
-########################################################################################
+###########################################################################
+#            (9) Change Read Length of BED Files (Choose Read Length)     #
+# Takes a folder of bed files and creates a new one with read length      #
+# based on arguments input on command line. This version of the "Extend   #
+# Read Length" subroutine allows choosing the final read length as        #
+# opposed to extending from the base.                                     #
+# Input files must end with "chr*.bed" (* is chromosome number)           #
+#                                                                         #
+#  Input: 1) Input Bed File prefix (ex: DY specifies DY_chr*.bed)         #
+#         2) Output Bed prefix (ex: NewDY will make NewDY_chr*.bed)       #
+#         3) New Read Length (ex: 97)                                     #
+#                                                                         #
+# Output: New Read Length BED Files                                       #
+###########################################################################
 
 sub change_bed_read_length
 {
-	# Input
-	my ($inputbedprefix, $outputbedprefix, $readlengthextension) = @_;
+	# Input (see subroutine description)
+	my ($inputprefix, $outputbedprefix, $readlengthextension) = @_;
 
-	print "Changing read lengths in BED files to $readlengthextension\n";
+	print "Change Read Length: Changing read lengths in BED files to $readlengthextension\n";
 
-	my @Chr;	# array that contains all the the names of the mouse chromosomes
-	for (my $n = 1; $n< 20; $n++)
-	{
-		push(@Chr, $n);
+	die "Error: Change Read Length: Input BED prefix ($inputprefix) is same as the output BED prefix ($outputbedprefix).\n" if $inputprefix eq $outputbedprefix;
+
+	# Scan BED directory for number of chromosome files
+	my @Chr;
+	my $filedir = $inputprefix;
+	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path
+	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+	@files = grep /hr(.+)\.bed/, @files; # Takes only the files with "hr*.bed"
+
+	foreach my $file (@files) {
+		$file =~ /hr(.+)\.bed/; # For each of those files, extract the chromosome number
+		push (@Chr, $1); # Add to list of chromosome numbers
 	}
-	push(@Chr, "M");
-	push(@Chr, "X");
-	push(@Chr, "Y");
+	@Chr = sort @Chr; # Sort list of chromosome numbers
 
+	# For every chromosome number detected, look for an input bed file with specified chromosome number and change read length
 	while(@Chr)
 	{
+		# File name creation and opening of files
 		my $chr = shift(@Chr);
-		my $inputfile = $inputbedprefix . $chr . ".bed";
-		open(IN, "<$inputfile") or die "cannot open $inputfile infile";
-		my $outfile = $outputbedprefix . "_Chr" . $chr . ".bed";
-		open(OUT, ">$outfile") or die "cannot open $outfile outfile";
+		my $inputfile = $inputprefix . "_chr" . $chr . ".bed";
+		open(IN, "<$inputfile") or do {next;};
+		my $outfile = $outputbedprefix . "_chr" . $chr . ".bed";
+		open(OUT, ">$outfile") or die "Error: Change Read Length: cannot open $outfile outfile";
 
-		print "Changing read lengths in $inputfile\n";
+		print "Change Read Length: Changing read lengths in $inputfile\n";
 
+		# Open input bed file pertaining to the specified chromosome number
 		while(<IN>)
 		{
 			chomp;
     			my @line = split ("\t", $_);
-			my $start = $line[1];
-			my $end = $line[2];
+			my $start = $line[1]; # Column 2: Start location of input read
+			my $end = $line[2]; # Column 3: End location of input read
+			# Change read length according to if strand is + or -
 			if($line[5] eq "+")
 			{
 				my $end = $line[1]+$readlengthextension;
@@ -503,18 +562,19 @@ sub change_bed_read_length
 				print OUT $line[0],"\t",$start,"\t",$line[2],"\t",$line[3],"\t",
 					$line[4],"\t",$line[5],"\n";
 			}
-			else {die "$line[5] does not equal + or - \n";}
+			else {die "Error: Change Read Length: $line[5] does not equal + or - \n";}
 		}
 
 		close(IN);
 		close(OUT);
 	}
-	print "Finished read length change\n";
+	print "Change Read Length: Finished read length change\n";
 }
 
 ###########################################################################
 #              (10) BED Directory to Variable Step WIG                    #
 # Converts a directory of BED files to a directory of WIG files           #
+# Input files must end with "chr*.bed" (* is chromosome number)           #
 #                                                                         #
 #  Input: 1) Input BED File prefix (ex: DY_Chr)                           #
 #         2) Output WIG prefix without Chr (ex: NewDY -> NewDY_Chr*.wig)  #
@@ -526,48 +586,56 @@ sub change_bed_read_length
 
 sub beddir_to_vswig
 {
-	# Input
-	my ($infileroot, $outfileroot, $wignameroot, $color) = @_;
+	# Input (see subroutine description)
+	my ($inputprefix, $outfileroot, $wignameroot, $color) = @_;
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
 	##################################################
 
-	my @Chr;	# array that contains all the the names of the chromosomes
+	# Scan BED directory for number of chromosome files
+	my @Chr; # Holds all the chromosome numbers (e.g. 19, M)
+	my $filedir = $inputprefix;
+	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path from the input prefix
+	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+	@files = grep /hr(.+)\.bed/, @files; # Takes only the files with "hr*.bed"
 
-	for (my $n = 1; $n < 20; $n++)
-	{
-		push(@Chr, $n);
+	foreach my $file (@files) {
+		$file =~ /hr(.+)\.bed/; # For each of those files, extract the chromosome number
+		push (@Chr, $1); # Add to list of chromosome numbers
 	}
-	push(@Chr, "M");
-	push(@Chr, "X");
-	push(@Chr, "Y");
+	@Chr = sort @Chr; # Sort list of chromosome numbers
 
 	####################################################################################
 	# Grabs the information from each line and assigns it to the appropriate variables #
 	####################################################################################
 
-	print "\n\nStarting Bed to Wig conversion of files with prefix $infileroot:\n";
+	print "\n\nBED Directory to Variable Step WIG: Starting Bed to Wig conversion of files with prefix $inputprefix:\n";
+
+	# Run for every chromosome number detected
 	while(@Chr)
 	{
-		my $infile = $infileroot . $Chr[0] . ".bed";
-		open(IN, "<$infile") or die "cannot open $infile infile"; #opens input file to be 											read (must be .bed)
-		my @infileroot = split(".bed", $infile);
-		my $outfile = $outfileroot . "_Chr" . $Chr[0] . ".wig";
-		open(OUT, ">$outfile") or die "cannot open $outfile outfile"; #opens output file to 											write to (.wig)
+		# File name creation and opening of files
+		my $infile = $inputprefix . "_chr" . $Chr[0] . ".bed";
+		open(IN, "<$infile") or die "Error: BED Directory to Variable Step WIG: cannot open $infile infile"; #opens input file to be read (must be .bed)
+		my @inputprefix = split(".bed", $infile);
+		my $outfile = $outfileroot . "_chr" . $Chr[0] . ".wig";
+		open(OUT, ">$outfile") or die "Error: BED Directory to Variable Step WIG: cannot open $outfile outfile"; #opens output file to write to (.wig)
+
 		# Prints the head of the track (necessary for genome browser to read file properly) 			(customizable through terminal)
-		my $wigname = $wignameroot . "_Chr" . $Chr[0];
+		my $wigname = $wignameroot . "_chr" . $Chr[0];
 		print OUT "track type=wiggle_0 visibility=full autoScale=off name=\"", 
 			$wigname, "\" description=\"", $wigname, "\" color=", $color, "\n";
 
 		my %PosVal;              # hash that contains the peak heights, kept small
 		my $position = 0;        # position of window
 		my $chromcheck;          # variable that checks each chromosome to make sure they 							are the same chromosome
-		my @line;                # temp array used to retreive the information of each line
+		my @line;                # temp array used to retrieve the information of each line
 		my $chrom;               # chromosome of current line
 		my $startread = 0;       # start of read at current line
 		my $endread = 0;         # end of read at current line 						(does not include this position)
 
+		# Open input bed file pertaining to the specified chromosome number
 		while (<IN>)
 		{
 			chomp;
@@ -588,7 +656,7 @@ sub beddir_to_vswig
 				}
 	    
 				# ends program if you have different chromosomes in your data
-				die "You have different chromosomes in this bed file (Program ended before completion)/n" unless $chrom == $chromcheck;
+				die "Error: BED Directory to Variable Step WIG: You have different chromosomes in this bed file (Program ended before completion)/n" unless $chrom eq $chromcheck;
 	    
 				# adds height to PosVal for the sequence found
 				my $addcount = $startread;
@@ -647,7 +715,7 @@ sub beddir_to_vswig
     
 		close IN;
 		close OUT;
-		print "Finished with Chromosome", $Chr[0] ,"\n";
+		print "BED Directory to Variable Step WIG: Finished with Chromosome", $Chr[0] ,"\n";
 		shift(@Chr);
 	}
 
@@ -657,6 +725,7 @@ sub beddir_to_vswig
 #                  (11) Variable Step WIG to FPKM WIG                     #
 # Calculates FPKM (Fragments Per Kilobase per Million mapped reads)       #
 # from raw WIG files using read length and read count (in millions)       #
+# Input files must end with "chr*.wig" (* is chromosome number)           #
 #                                                                         #
 #  Input: 1) Input VarStepWIG prefix (format: position [tab] height)      #
 #         2) Output FPKM WIG prefix without Chr                           #
@@ -668,40 +737,52 @@ sub beddir_to_vswig
 
 sub vswig_to_fpkmwig
 {
-	# Input
-	my ($inputWIGprefix, $outprefix, $readlength, $readcount) = @_;
+	# Input (see subroutine description)
+	my ($inputprefix, $outprefix, $readlength, $readcount) = @_;
 
-	print "Converting $inputWIGprefix Variable Step WIG files to $outprefix FPKM WIG files\n";
+	print "Variable Step WIG to FPKM WIG: Converting $inputprefix Variable Step WIG files to $outprefix FPKM WIG files\n";
+
+	die "Error: Variable Step WIG to FPKM WIG: Input WIG prefix ($inputprefix) is same as the output WIG prefix ($outprefix).\n" if $inputprefix eq $outprefix;
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
 	##################################################
 
-	my @Chr;             # array that contains all the the names of the mouse chromosomes
-	for (my $n = 1; $n < 20; $n++)
-	{
-		push(@Chr, $n);
+	# Scan WIG directory for number of chromosomes
+	my @Chr; # Holds all the chromosome numbers (e.g. 19, M)
+	my $filedir = $inputprefix;
+	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path from the input prefix
+	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+	@files = grep /hr(.+)\.wig/, @files; # Takes only the files with "hr*.wig"
+
+	foreach my $file (@files) {
+		$file =~ /hr(.+)\.wig/; # For each of those files, extract the chromosome number
+		push (@Chr, $1); # Add to list of chromosome numbers
 	}
-	push(@Chr, "M");
-	push(@Chr, "X");
-	push(@Chr, "Y");
+	@Chr = sort @Chr; # Sort list of chromosome numbers
 
 	#############################################
 	# Calculate and print OUT FPKM from file(s) #
 	#############################################
 
+	# Run for every chromosome number detected
 	while(@Chr)
 	{
+		# File name creation and opening of files
 		my $chr = shift(@Chr);
-		print "Now Converting: Chr$chr\n";
-		my $inputWIG = $inputWIGprefix . $chr . ".wig";
-		my $outfile = $outprefix . "_Chr" . $chr . ".wig";
-		open(INWIG, "<$inputWIG") or die "cannot open $inputWIG INWIG infile";
-		open(OUT, ">$outfile") or die "cannot open $outfile outfile";
+		print "Variable Step WIG to FPKM WIG: Now Converting: Chr$chr\n";
+		my $inputWIG = $inputprefix . "_chr" . $chr . ".wig";
+		my $outfile = $outprefix . "_chr" . $chr . ".wig";
+		open(INWIG, "<$inputWIG") or die "Error: Variable Step WIG to FPKM WIG: cannot open $inputWIG infile";
+		open(OUT, ">$outfile") or die "Error: Variable Step WIG to FPKM WIG: cannot open $outfile outfile";
+
+		# Print head of track (first two lines) from input wig to output wig
 		my $lin = <INWIG>;
 		print OUT $lin;
 		$lin = <INWIG>;
 		print OUT $lin;
+
+		# For rest of the input file, convert to FPKM and print to output wig
 		while(<INWIG>)
 		{
 			chomp;
@@ -716,7 +797,7 @@ sub vswig_to_fpkmwig
 		close OUT;
 		close INWIG;
 	}
-	print "Completed conversion of $inputWIGprefix Variable Step WIG to $outprefix FPKM WIG\n";
+	print "Variable Step WIG to FPKM WIG: Completed conversion of $inputprefix Variable Step WIG to $outprefix FPKM WIG\n";
 }
 
 ###########################################################################
@@ -724,7 +805,8 @@ sub vswig_to_fpkmwig
 #   * Note: subroutine calls the "BED Directory to Variable Step WIG" *   #
 #   *        and "Variable Step WIG to FPKM WIG" subroutines          *   #
 #                                                                         #
-# Converts a directory of BED files to a directory of FPKM WIG files      #
+# Converts a directory of BED files to a directory of FPKM WIG files.     #
+# Input files must end with "chr*.bed" (* is chromosome number)           #
 #                                                                         #
 #  Input: 1) Input BED File prefix (ex: DY_Chr)                           #
 #         2) Output FPKM WIG prefix without Chr                           #
@@ -738,26 +820,146 @@ sub vswig_to_fpkmwig
 
 sub beddir_to_fpkmwig
 {
-	# Input
-	my ($inputprefix, $outprefix, $wignameroot, $color, $readlength, $readcount) = @_;
+	# Input (see subroutine description)
+	my ($inputprefix, $outfileroot, $wignameroot, $color, $readlength, $readcount) = @_;
 
-	my $varstepprefix = $inputprefix . "_TempVarStep";
-	my $varstepfiles  = $inputprefix . "_TempVarStep" . "_Chr";
 
-	# BED Directory to Variable Step WIG
-	beddir_to_vswig($inputprefix, $varstepprefix, $wignameroot, $color);
+	##################################################
+	#     Global Variables and I/O Initiation        #
+	##################################################
 
-	# Variable Step WIG to FPKM WIG
-	vswig_to_fpkmwig($varstepfiles, $outprefix, $readlength, $readcount);
+	# Scan BED directory for number of chromosome files
+	my @Chr; # Holds all the chromosome numbers (e.g. 19, M)
+	my $filedir = $inputprefix;
+	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path from the input prefix
+	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+	@files = grep /hr(.+)\.bed/, @files; # Takes only the files with "hr*.bed"
 
-	# Remove Temporary Files
-	`rm $varstepfiles*`;
+	foreach my $file (@files) {
+		$file =~ /hr(.+)\.bed/; # For each of those files, extract the chromosome number
+		push (@Chr, $1); # Add to list of chromosome numbers
+	}
+	@Chr = sort @Chr; # Sort list of chromosome numbers
+
+	####################################################################################
+	# Grabs the information from each line and assigns it to the appropriate variables #
+	####################################################################################
+
+	print "\n\nBED Directory to FPKM WIG: Starting Bed to Wig conversion of files with prefix $inputprefix:\n";
+
+	# Run for every chromosome number detected
+	while(@Chr)
+	{
+		# File name creation and opening of files
+		my $infile = $inputprefix . "_chr" . $Chr[0] . ".bed";
+		open(IN, "<$infile") or die "Error: BED Directory to FPKM WIG: cannot open $infile infile"; #opens input file to be read (must be .bed)
+		my @inputprefix = split(".bed", $infile);
+		my $outfile = $outfileroot . "_chr" . $Chr[0] . ".wig";
+		open(OUT, ">$outfile") or die "Error: BED Directory to FPKM WIG: cannot open $outfile outfile"; #opens output file to write to (.wig)
+
+		# Prints the head of the track (necessary for genome browser to read file properly) 			(customizable through terminal)
+		my $wigname = $wignameroot . "_chr" . $Chr[0];
+		print OUT "track type=wiggle_0 visibility=full autoScale=off name=\"", 
+			$wigname, "\" description=\"", $wigname, "\" color=", $color, "\n";
+
+		my %PosVal;              # hash that contains the peak heights, kept small
+		my $position = 0;        # position of window
+		my $chromcheck;          # variable that checks each chromosome to make sure they 							are the same chromosome
+		my @line;                # temp array used to retrieve the information of each line
+		my $chrom;               # chromosome of current line
+		my $startread = 0;       # start of read at current line
+		my $endread = 0;         # end of read at current line 						(does not include this position)
+
+		# Open input bed file pertaining to the specified chromosome number
+		while (<IN>)
+		{
+			chomp;
+			@line = split ("\t", $_);
+			$chrom = $line[0];	# makes $chrom have the chromosome information
+			$startread = $line[1];	# sets the value for the start of the read to 							$startread
+			$endread = $line[2];	# sets the value for the end of the read to $endread
+
+	    		# Makes the program run faster by skipping the first gap
+			if ($startread > -1)  # gets rid of all lines before 0 point
+			{
+				#    print "$chrom \t $startread \t $endread \n";
+				if ($position == 0)
+		    		{ 
+					$position = $startread;	
+					$chromcheck = $chrom;
+					print OUT "variableStep chrom=", $chrom," step=1\n";
+				}
+	    
+				# ends program if you have different chromosomes in your data
+				die "Error: BED Directory to FPKM WIG: You have different chromosomes in this bed file (Program ended before completion)/n" unless $chrom eq $chromcheck;
+	    
+				# adds height to PosVal for the sequence found
+				my $addcount = $startread;
+				while ($addcount < $endread)
+				{
+					if (exists $PosVal{$addcount})
+					{
+						$PosVal{$addcount} = $PosVal{$addcount} + 1000 / ($readlength * $readcount);
+						$PosVal{$addcount} = sprintf("%.4f",$PosVal{$addcount});
+					}
+					else
+					{
+						$PosVal{$addcount} = 1000 / ($readlength * $readcount);
+						$PosVal{$addcount} = sprintf("%.4f",$PosVal{$addcount});
+					}
+					$addcount = $addcount + 1;
+				}
+
+	##################################################
+	# Prints data to a fixed step wiggle file (.wig) #
+	##################################################
+
+	# Since you should NEVER have a read's start before the current read's start, 
+	# this will print all positions until that point
+
+				while ($position < $startread) 
+				{
+					if (exists $PosVal{$position})
+					{
+						print OUT $position, "\t", $PosVal{$position}, "\n";
+						delete $PosVal{$position};
+						$position = $position + 1;
+					}
+					else # skips gaps by jumping to the next position and 							starting a new fixed step line
+					{
+		    				$position = $startread;
+					}
+				}
+			}
+		}
+
+	##############################################################
+	# Prints data past the window to $outfile (ONE LAST TIME!!!) #
+	##############################################################
+
+	#  This will print the rest of the reads
+		while ($position < $endread) 
+		{
+			if (exists $PosVal{$position})
+			{
+				print OUT $position, "\t", $PosVal{$position}, "\n";
+				delete $PosVal{$position};
+				$position = $position + 1;
+			}
+		}
+    
+		close IN;
+		close OUT;
+		print "BED Directory to FPKM WIG: Finished with Chromosome", $Chr[0] ,"\n";
+		shift(@Chr);
+	}
 }
 
 ###########################################################################
 #                         (13) Visualize FPKM WIG                         #
 # Combines FPKM (Fragments Per Kilobase per Million mapped reads)         #
-# files given multipliers for them                                        #
+# files given multipliers for them.                                       #
+# Input files must end with "chr*.wig" (* is chromosome number)           #
 #                                                                         #
 #  Input: 1) Input prefix for FPKM WIG files(leave out chr# and .wig)     #
 #         2) Output prefix FPKM WIG files without Chr                     #
@@ -770,72 +972,86 @@ sub beddir_to_fpkmwig
 
 sub visualize_fpkmwig
 {
-	# Input
+	# Input (see subroutine description)
 	my ($inputprefix, $outprefix, $stepsize, $color, $tracknameprefix) = @_;
 
-	print "Visualizing $inputprefix FPKM WIG files\n";
+	print "Visualize FPKM WIG: Visualizing $inputprefix FPKM WIG files\n";
+
+	die "Error: Visualize FPKM WIG: Input WIG prefix ($inputprefix) is same as the output WIG prefix ($outprefix).\n" if $inputprefix eq $outprefix;
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
 	##################################################
-	my @Chr;             # array that contains all the the names of the mouse chromosomes
-	for (my $n = 1; $n < 20; $n++)
-	{
-		push(@Chr, $n);
+
+	# Scan WIG directory for number of chromosomes
+	my @Chr; # Holds all the chromosome numbers (e.g. 19, M)
+	my $filedir = $inputprefix;
+	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path from the input prefix
+	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+	@files = grep /hr(.+)\.wig/, @files; # Takes only the files with "hr*.wig"
+
+	foreach my $file (@files) {
+		$file =~ /hr(.+)\.wig/; # For each of those files, extract the chromosome number
+		push (@Chr, $1); # Add to list of chromosome numbers
 	}
-	push(@Chr, "M");
-	push(@Chr, "X");
-	push(@Chr, "Y");
+	@Chr = sort @Chr; # Sort list of chromosome numbers
 
 	#############################################
 	# Visualize and print OUT FPKM from file(s) #
 	#############################################
 
+	# Run for every chromosome number detected
 	while(@Chr)
 	{
+		# File name creation and opening of files
 		my $chr = shift(@Chr);
-		print "Now Visualizing: Chr$chr\n";
-		my $inputWIG = $inputprefix . $chr . ".wig";
-		open(IN, "<$inputWIG") or die "cannot open $inputWIG IN infile";
-		# Shave off first two header lines
+		print "Visualize FPKM WIG: Now Visualizing: Chr$chr\n";
+		my $inputWIG = $inputprefix . "_chr" . $chr . ".wig";
+		open(IN, "<$inputWIG") or die "Error: Visualize FPKM WIG: cannot open $inputWIG IN infile";
+		# Delete first two header lines
 		my $lin = <IN>;
 		$lin = <IN>;
-		my $outfile = $outprefix . "_Chr" . $chr . ".wig";	
-		open(OUT, ">$outfile") or die "cannot open $outfile OUT outfile";
-		my $trackname = $tracknameprefix . "_Chr" . $chr;
-	
+		my $outfile = $outprefix . "_chr" . $chr . ".wig";	
+		open(OUT, ">$outfile") or die "Error: Visualize FPKM WIG: cannot open $outfile OUT outfile";
+
+		# Create head of track in output file
+		my $trackname = $tracknameprefix . "_" . $chr;
 		print OUT "track type=wiggle_0 visibility=full autoScale=off name=\"", $trackname, "\" description=\"", $trackname, "\" color=", $color, "\n";
 		print OUT "variableStep chrom=chr", $chr," span=", $stepsize ,"\n";
 
-		my %HeightHash;
-		$lin = <IN>;
+		my %HeightHash; # Keys = position, Values = height
+		$lin = <IN>; # Reads first line of input wig
 		my @firstline = split("\t",substr($lin, 0, -1));
-		my $currentpos = $firstline[0];
-		my $startpos = $firstline[0];
-		$HeightHash{$firstline[0]}=$firstline[1];
+		my $currentpos = $firstline[0]; # Initializes current position at first position
+		my $startpos = $firstline[0]; # Initializes start position at first position
+		$HeightHash{$firstline[0]}=$firstline[1]; # Adds first position and height to hash
+
 		while(<IN>)
 		{
 			chomp;
 			my @line = split("\t",$_);
-			$HeightHash{$line[0]}=$line[1];
-			$currentpos = $line[0];
-			if ($startpos + $stepsize <= $currentpos)
+			$HeightHash{$line[0]}=$line[1]; # Adds position and height to hash
+			$currentpos = $line[0]; # Current position at current line
+			if ($startpos + $stepsize <= $currentpos) # When gap between start position and current position is large enough (of at least size $stepsize), calculate height and print
 			{
-				my $height=0;
+				my $height=0; # Initialize height for window
+				# For every base in the window, add each height to the total if exists
 				for(my $n = $startpos; $n < ($startpos + $stepsize); $n++)
 				{
-					if(exists $HeightHash{$n})
+					if(exists $HeightHash{$n}) # May not exist if no reads at that base
 					{	
 						$height = $height + $HeightHash{$n};
 						delete $HeightHash{$n};
 					}
 				}
-				$height = $height / $stepsize;
+				$height = $height / $stepsize; # Average the height over the window size
 				$height = sprintf("%.2f", $height);
-				print OUT $startpos , "\t" , $height , "\n";
-				$startpos = $currentpos;
+				print OUT $startpos , "\t" , $height , "\n"; # Print start position and height to output
+				$startpos = $currentpos; # New start position from current position
 			}
 		}
+
+		# Run a last window to check if any bases were missed from the last position of the file
 		my $height=0;
 		for(my $n = $startpos; $n < ($startpos + $stepsize); $n++)
 		{
@@ -845,53 +1061,63 @@ sub visualize_fpkmwig
 			}
 		}
 		$height = $height / $stepsize;
-		$height = sprintf("%.5f", $height);
+		$height = sprintf("%.2f", $height);
 		print OUT $startpos , "\t" , $height , "\n";
+
 		close IN;
-		close OUT;	
-		print "Finished making $outfile, now zipping it.\n";
+		close OUT;
+	
+		print "Visualize FPKM WIG: Finished making $outfile, now zipping it.\n";
 		my $commandline = "gzip $outfile";
 		`$commandline`;
 	}
-	print "Finished Visualizing $inputprefix FPKM WIG files\n";
+	print "Visualize FPKM WIG: Finished Visualizing $inputprefix FPKM WIG files\n";
 }
 
 ###########################################################################
 #                       (14) RPKM From BED and GTF                        #
 # Scores RPKM (Reads Per Kilobase per Million mapped reads)               #
-# for the given GTF file and Bed directory/prefix                         #
+# for the given GTF file and Bed directory/prefix.                        #
+# Input bed files must end with "chr*.bed" (* is chromosome number)       #
 #                                                                         #
 #  Input: 1) Input BED prefix						  #
 #         2) Input GTF file                                               #
 #         3) Output RPKM table file name                                  #
 #         4) Total Reads (in millions)                                    #
 #                                                                         #
-# Output: Returns: RPKM Output File                                       #
+# Output: RPKM Output File                                                #
 ###########################################################################
 
 sub rpkm_from_bed
 {
-	print "Loading GTFHash from GTF file\n";
-	# Input
-	my ($inputBEDprefix, $GTFfilename, $OutputName, $TotalReads) = @_;
+	print "RPKM From BED and GTF: Loading GTFHash from GTF file\n";
+	# Input (see subroutine description)
+	my ($inputprefix, $GTFfilename, $OutputName, $TotalReads) = @_;
 
-	print "Scoring RPKM from $inputBEDprefix BED files and $GTFfilename GTF file\n";
+	print "RPKM From BED and GTF: Scoring RPKM from $inputprefix BED files and $GTFfilename GTF file\n";
+
+	die "Error: RPKM From BED and GTF: Input GTF file ($GTFfilename) is same as the output RPKM file ($OutputName).\n" if $GTFfilename eq $OutputName;
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
 	##################################################
 
-	open(GTF, "<$GTFfilename") or die "cannot open $GTFfilename GTF infile";
-	open(OUT, ">$OutputName") or die "cannot open $OutputName OUT outfile";
+	open(GTF, "<$GTFfilename") or die "Error: RPKM From BED and GTF: cannot open $GTFfilename GTF infile";
+	open(OUT, ">$OutputName") or die "Error: RPKM From BED and GTF: cannot open $OutputName outfile";
 	print OUT "Gene_Name\tChrom_pos\tGene_length\tStrand\tRPKM\n";
 
-	my @Chr;             # array that contains all the the names of the mouse chromosomes
-	for (my $n = 1; $n< 20; $n++){
-		push(@Chr, $n);
+	# Scan BED directory for number of chromosome files
+	my @Chr; # Holds all the chromosome numbers (e.g. 19, M)
+	my $filedir = $inputprefix;
+	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path from the input prefix
+	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+	@files = grep /hr(.+)\.bed/, @files; # Takes only the files with "hr*.bed"
+
+	foreach my $file (@files) {
+		$file =~ /hr(.+)\.bed/; # For each of those files, extract the chromosome number
+		push (@Chr, $1); # Add to list of chromosome numbers
 	}
-	push(@Chr, "M");
-	push(@Chr, "X");
-	push(@Chr, "Y");
+	@Chr = sort @Chr; # Sort list of chromosome numbers
 
 	########################
 	# GTF structure create #
@@ -906,11 +1132,13 @@ sub rpkm_from_bed
 	# 
 	# Note: count will be used later in the script but for now will be 0.
 
-	print "Loading GTFHash from GTF file\n";
-	my %GTFHash;
+	print "RPKM From BED and GTF: Loading GTFHash from GTF file\n";
+	my %GTFHash; # GTF{chrom}->{gene_name}->[start,stop,strand,count]
+
 	while(<GTF>)
 	{
 		chomp;
+		# Splitting data into array and variables
 		my @line = split("\t",$_);
 		my $chrom = $line[0];
 		my $source = $line[1];
@@ -920,14 +1148,16 @@ sub rpkm_from_bed
 		my $score = $line[5];
 		my $strand = $line[6];
 		my $frame = $line[7];
+		# Splitting attribute info into array and variables
 		my @attribute = split("\"",$line[8]);
 		my $gene_id = $attribute[1];
 		my $gene_name = $attribute[3];
 		my $p_id = $attribute[5];
 		my $transcript_id = $attribute[7];
 		my $tss_id = $attribute[9];	
-		if($feature eq "exon")
+		if($feature eq "exon") # Only add exons to GTFHash
 		{
+			# If gene already exists in hash, use the smallest position as the start and the largest position as the end
 			if(exists $GTFHash{$chrom}{$gene_name})
 			{
 				if($start < $GTFHash{$chrom}{$gene_name}[0])
@@ -947,6 +1177,7 @@ sub rpkm_from_bed
 					$GTFHash{$chrom}{$gene_name}[1] = $start;
 				}
 			}
+			# Otherwise, gene does not exist in hash yet, so add gene information to hash
 			else
 			{
 			push(@{$GTFHash{$chrom}{$gene_name}},$start);
@@ -961,24 +1192,26 @@ sub rpkm_from_bed
 	# Calculates and prints FPKM #
 	##############################
 
+	# Run for every chromosome number detected in bed directory
 	while(@Chr)
 	{
 		my $chr = shift(@Chr);
 		my $chrom_name = "chr" . $chr;
 
-		#opens infile
-		my $inputfile = $inputBEDprefix . $chr . ".bed";
-		open(IN, "<$inputfile") or die "cannot open $inputfile IN infile";
+		# opens infile
+		my $inputfile = $inputprefix . "_chr" . $chr . ".bed";
+		open(IN, "<$inputfile") or die "Error: RPKM From BED and GTF: cannot open $inputfile IN infile";
 
-		#Makes a StartHash for the chromosome
-		print "Loading Chr$chr start positions into StartHash\n";
-		my %StartHash;  #StartHash{position}[genename1,genename2,ect]
+		# Makes a StartHash for the chromosome
+		print "RPKM From BED and GTF: Loading Chr$chr start positions into StartHash\n";
+		my %StartHash;  # StartHash{position}[genename1,genename2,ect]
+		# Add all genes at that start position to the position in the hash
 		foreach my $gene_name (keys %{$GTFHash{$chrom_name}})
 		{ 
 			push(@{$StartHash{$GTFHash{$chrom_name}{$gene_name}[0]}},$gene_name);
 		}
 		
-		print "Analyzing Chromosome $chr \n";
+		print "RPKM From BED and GTF: Analyzing Chromosome $chr \n";
 		while(<IN>)
 		{
 			chomp;
@@ -987,35 +1220,44 @@ sub rpkm_from_bed
 			my $startread = $InArray[1];  #start of read
 			my $endread = $InArray[2];    #end of read
 
+			# Run for every gene in the hash
 			foreach my $gene_name (keys %{$GTFHash{$chrom_name}})
 			{ 
+				# If read maps to any part of the gene, add to count
 				if($endread >= $GTFHash{$chrom_name}{$gene_name}[0] && 						$startread <= $GTFHash{$chrom_name}{$gene_name}[1])
 				{
 					++$GTFHash{$chrom_name}{$gene_name}[3];
 				}
 			}
 		}
-		#print GTFHash to Outfile
+		# Print GTFHash to Outfile, for every gene
 		foreach my $gene_name (keys %{$GTFHash{$chrom_name}})
 		{ 
+			# $Chrposition = chr*:start-end
 			my $Chrposition = $chrom_name . ":" . $GTFHash{$chrom_name}{$gene_name}[0] . 					"-" . $GTFHash{$chrom_name}{$gene_name}[1];
+			# Length of the gene (End position - start position)
 			my $genelength = $GTFHash{$chrom_name}{$gene_name}[1] - $GTFHash{$chrom_name}{$gene_name}[0];
+			# RPKM score = (Count/Gene Length) / Total Reads (in Millions)
 			my $RPKMscore = $GTFHash{$chrom_name}{$gene_name}[3] / $genelength;
 			$RPKMscore = $RPKMscore / $TotalReads;
-			$RPKMscore = sprintf("%.4f", $RPKMscore);		
+			$RPKMscore = sprintf("%.4f", $RPKMscore);
+			# Print to output (tab-delimited)
+			# 1		2		3		4	5
+			# gene name	chr*:start-end	gene length	strand	RPKM score		
 			print OUT "$gene_name\t$Chrposition\t$genelength\t$GTFHash{$chrom_name}{$gene_name}[2]\t$RPKMscore\n";
 		}
 	}
 	close IN;
 	close GTF;
 	close OUT;
-	print "Finished with $OutputName RPKM file\n";
+	print "RPKM From BED and GTF: Finished with $OutputName RPKM file\n";
 }
 
 ###########################################################################
 #                    (15) FPKM from GTF and FPKMWIG                       #
 # Scores FPKM (Fragments Per Kilobase per Million mapped reads)           #
 # for the given GTF file and FPKMWIG directory/prefix                     #
+# Input files must end with "chr*.wig" (* is chromosome number)           #
 #                                                                         #
 #  Input: 1) Input FPKMWIG prefix                                         #
 #         2) Input GTF File                                               #
@@ -1027,27 +1269,33 @@ sub rpkm_from_bed
 
 sub fpkm_from_gtf_fpkmwig
 {
-	# Input
-	my ($inputFPKMprefix, $GTFfilename, $OutputName, $ColumnName) = @_;
+	# Input (see subroutine description)
+	my ($inputprefix, $GTFfilename, $OutputName, $ColumnName, @Chromosomes) = @_;
 
-	print "Scoring FPKM from $inputFPKMprefix FPKM WIG files and $GTFfilename GTF file\n";
+	print "FPKM from GTF and FPKMWIG: Scoring FPKM from $inputprefix FPKM WIG files and $GTFfilename GTF file\n";
+
+	die "Error: FPKM from GTF and FPKMWIG: Input GTF file ($GTFfilename) is same as the output FPKM file ($OutputName).\n" if $GTFfilename eq $OutputName;
 
 	##################################################
 	#     Global Variables and I/O Initiation        #
 	##################################################
 
-	open(GTF, "<$GTFfilename") or die "cannot open $GTFfilename GTF infile";
-	open(OUT, ">$OutputName") or die "cannot open $OutputName OUT outfile";
+	open(GTF, "<$GTFfilename") or die "Error: FPKM from GTF and FPKMWIG: cannot open $GTFfilename GTF infile";
+	open(OUT, ">$OutputName") or die "Error: FPKM from GTF and FPKMWIG: cannot open $OutputName OUT outfile";
 	print OUT "Feature_Name\tFull_position\tSub_Positions\tLength\tStrand\t$ColumnName\n";
 
-	my @Chr;             # array that contains all the the names of the mouse chromosomes
-	for (my $n = 1; $n< 20; $n++)
-	{
-		push(@Chr, $n);
+	# Scan WIG directory for number of chromosomes
+	my @Chr; # Holds all the chromosome numbers (e.g. 19, M)
+	my $filedir = $inputprefix;
+	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path from the input prefix
+	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+	@files = grep /hr(.+)\.wig/, @files; # Takes only the files with "hr*.wig"
+
+	foreach my $file (@files) {
+		$file =~ /hr(.+)\.wig/; # For each of those files, extract the chromosome number
+		push (@Chr, $1); # Add to list of chromosome numbers
 	}
-	push(@Chr, "M");
-	push(@Chr, "X");
-	push(@Chr, "Y");
+	@Chr = sort @Chr; # Sort list of chromosome numbers
 
 	########################
 	# GTF structure create #
@@ -1064,11 +1312,14 @@ sub fpkm_from_gtf_fpkmwig
 
 	my $source;
 
-	print "Loading GTFHash from GTF file.\n";
+	print "FPKM from GTF and FPKMWIG: Loading GTFHash from GTF file.\n";
 	my %GTFHash;
+
+	# Processing GTF file into a hash to contain its data
 	while(<GTF>)
 	{
 		chomp;
+		# Splitting data into array and variables
 		my @line = split("\t",$_);
 		my $chrom = $line[0];
 		$source = $line[1];
@@ -1085,22 +1336,24 @@ sub fpkm_from_gtf_fpkmwig
 			$end = $start;
 			$start = $temp;
 		}
-		my $length = $end - $start;
-		my $flag = 1;
-		while($flag > 0)
+
+		# Pushing data into features
+		my $length = $end - $start; # Length of read
+		my $flag = 1; # Check if position contains data already in hash
+		while($flag > 0) 
 		{
-			if(exists $GTFHash{$chrom}{$feature}{$flag})
+			if(exists $GTFHash{$chrom}{$feature}{$flag}) # If data exists at this feature and segment, increase flag to avoid overwrite
 			{
 				$flag++;
 			}
-			else
+			else # Data does not exist at this segment yet, push data into array
 			{
 				push(@{$GTFHash{$chrom}{$feature}{$flag}},$start);
 				push(@{$GTFHash{$chrom}{$feature}{$flag}},$end);
 				push(@{$GTFHash{$chrom}{$feature}{$flag}},$length);
 				push(@{$GTFHash{$chrom}{$feature}{$flag}},$strand);
 				push(@{$GTFHash{$chrom}{$feature}{$flag}},0);
-				$flag = 0;
+				$flag = 0; # End while loop
 			}
 		}
 	}
@@ -1112,24 +1365,26 @@ sub fpkm_from_gtf_fpkmwig
 
 	while(@Chr)
 	{
-		# my %FPKMHash;  #holds FPKM from IN file for small selected area
 		my $chr = shift(@Chr);
 
 		# opens infile and removes first two lines from it (header lines)
-		my $inputfile = $inputFPKMprefix . $chr . ".wig";
-		open(IN, "<$inputfile") or die "cannot open $inputfile IN infile";
-		<IN>; <IN>;
+		my $inputfile = $inputprefix . $chr . ".wig";
+		open(IN, "<$inputfile") or die "Error: FPKM from GTF and FPKMWIG: cannot open $inputfile IN infile";
+		<IN>; <IN>; # Skip first two lines
 
 		my %FeatureHash;
 		my $chrom_name = "chr" . $chr;
-
-		print "Loading Chr$chr start positions into FeatureHash.\n";
 		my %StartHash;
-		# Makes a StartHash and a FeatureHash for the chromosome
-		foreach my $feature (keys %{$GTFHash{$chrom_name}}) 
+
+		print "FPKM from GTF and FPKMWIG: Loading Chr$chr start positions into FeatureHash.\n";
+		# Makes a StartHash and a FeatureHash for the chromosome by processing every feature
+		foreach my $feature (keys %{$GTFHash{$chrom_name}})
 		{ 
-			my $feature_start = 999999999999;
-			my $feature_end = 0;
+
+			my $feature_start = 999999999999; # Initialize start so that a flag start must replace it in the coming loop
+			my $feature_end = 0; # Initialize end so that a flag end must replace it in the coming loop
+			
+			# Use the first start and last end out of all flags as the start and end of the feature
 			foreach my $segnumber (keys %{$GTFHash{$chrom_name}{$feature}})
 			{ 
 				if($GTFHash{$chrom_name}{$feature}{$segnumber}[0] < $feature_start)
@@ -1141,6 +1396,7 @@ sub fpkm_from_gtf_fpkmwig
 					$feature_end = $GTFHash{$chrom_name}{$feature}{$segnumber}[1];
 				}		
 			}
+
 			# Adds start and end to Feature Hash
 			push(@{$FeatureHash{$feature}},$feature_start);
 			push(@{$FeatureHash{$feature}},$feature_end);
@@ -1152,12 +1408,13 @@ sub fpkm_from_gtf_fpkmwig
 
 		my @SortedFeatureArray;
 		# Fills @SortedFeatureArray with list (in order of starting position)
-		foreach my $startpos (sort { $a <=> $b } keys %StartHash)
+		foreach my $startpos (sort { $a <=> $b } keys %StartHash) # For every start position
 		{
-			while(exists $StartHash{$startpos}[0])
+			while(exists $StartHash{$startpos}[0]) # While a feature exists at this start
 			{
-			push(@SortedFeatureArray,$StartHash{$startpos}[0]);
-			shift(@{$StartHash{$startpos}});
+				# Push the feature onto the sorted array and shift it out of the hash
+				push(@SortedFeatureArray,$StartHash{$startpos}[0]);
+				shift(@{$StartHash{$startpos}});
 			}
 		}
 	
@@ -1165,10 +1422,12 @@ sub fpkm_from_gtf_fpkmwig
 
 		my $lastendpos = 0;
 
-		print "Analyzing Chromosome $chr \n";
+		print "FPKM from GTF and FPKMWIG: Analyzing Chromosome $chr \n";
+		# Open FPKMWIG file pertaining to current chromosome
 		while(<IN>)
 		{
 			chomp;
+			# Splitting data into array and variables
 			my @InArray = split("\t",$_);
 			my $currentpos = $InArray[0];
 			my $currentheight = $InArray[1];
@@ -1178,7 +1437,7 @@ sub fpkm_from_gtf_fpkmwig
 			else {last;}
 		
 			my $sortedfeaturepointer = 0;
-			# while current position is not before the start of the current hash
+			# while current position is not before the start of the feature hash
 			while($FeatureHash{$SortedFeatureArray[$sortedfeaturepointer]}[0] 					< $currentpos)
 			{
 				my $feature = $SortedFeatureArray[$sortedfeaturepointer];
@@ -1188,8 +1447,6 @@ sub fpkm_from_gtf_fpkmwig
 				if($currentpos > $FeatureHash{$feature}[1])
 				{
 					shift(@SortedFeatureArray);
-					# my $feature_finished = shift(@SortedFeatureArray);
-					# print "Finished Feature: " , $feature_finished , "\t", $FeatureHash{$feature}[1] , "\n";
 					if(exists $SortedFeatureArray[0]){next;}
 					else {last;}
 				}		
@@ -1204,53 +1461,58 @@ sub fpkm_from_gtf_fpkmwig
 				my $segnumber = 1;
 				while(exists $GTFHash{$chrom_name}{$feature}{$segnumber})
 				{
+					# If current position still between start and end of feature
 					if($currentpos > $GTFHash{$chrom_name}{$feature}{$segnumber}[0] && $currentpos < $GTFHash{$chrom_name}{$feature}{$segnumber}[1])
 					{
-						$GTFHash{$chrom_name}{$feature}{$segnumber}[4] = $GTFHash{$chrom_name}{$feature}{$segnumber}[4] + $currentheight;
+						$GTFHash{$chrom_name}{$feature}{$segnumber}[4] = $GTFHash{$chrom_name}{$feature}{$segnumber}[4] + $currentheight; # Add current height to height in feature
 					}
 					++$segnumber;
 				}			
-				++$sortedfeaturepointer;
+				++$sortedfeaturepointer; # Move to next feature in sorted array
 			}
 		}
 		close IN;
 	
-		print "Printing $chrom_name to Outfile\n\n";
-		#Print FPKM's to Outfile
+		print "FPKM from GTF and FPKMWIG: Printing $chrom_name to Outfile\n\n";
+		# Print FPKM's to Outfile
 		foreach my $feature (sort keys %{$GTFHash{$chrom_name}})
 		{ 
 			my $featurelength = 0;
 			my $FPKM = 0;
-			my $Chr_total_position = $chrom_name . ":" . $FeatureHash{$feature}[0] . "-" . $FeatureHash{$feature}[1];
+			my $Chr_total_position = $chrom_name . ":" . $FeatureHash{$feature}[0] . "-" . $FeatureHash{$feature}[1]; # e.g. chrX:12345-23456
 			my $Chrpositions = "";
 			my $loopcount = 0;
 			foreach my $segnumber (keys %{$GTFHash{$chrom_name}{$feature}})
 			{
+				# Add a "/" for additional segments
 				if ($loopcount > 0)
 				{
 					$Chrpositions = $Chrpositions . " / ";
 				}
 				++$loopcount;
-				$featurelength = $featurelength + $GTFHash{$chrom_name}{$feature}{$segnumber}[2];
-				$FPKM = $FPKM + $GTFHash{$chrom_name}{$feature}{$segnumber}[4];
-				$Chrpositions = $chrom_name . ":" . $GTFHash{$chrom_name}{$feature}{$segnumber}[0] . "-" . $GTFHash{$chrom_name}{$feature}{$segnumber}[1];
+				$featurelength = $featurelength + $GTFHash{$chrom_name}{$feature}{$segnumber}[2]; # Add the segment lengths to the feature length to get the total feature length
+				$FPKM = $FPKM + $GTFHash{$chrom_name}{$feature}{$segnumber}[4]; # Add all the segments heights to the FPKM score
+				$Chrpositions = $chrom_name . ":" . $GTFHash{$chrom_name}{$feature}{$segnumber}[0] . "-" . $GTFHash{$chrom_name}{$feature}{$segnumber}[1]; # Will give the positions of the segments as opposed to the full feature
 			}
+			
+			# Calculate the FPKM score
 			if($featurelength > 0)
 			{
-				$FPKM = (1000 * $FPKM) / $featurelength;
+				$FPKM = (1000 * $FPKM) / $featurelength; 
 				$FPKM = sprintf("%.4f", $FPKM);	
 			} 
-			else
+			else # If no feature, then FPKM = 0;
 			{
 				$FPKM = 0;
 			}
 			# Columns (tab-delimited)
-			# Feature  TotalPosition  Positions  FeatureLength(s)  Strand  FPKM
+			# 1		2		3		4			5	6
+			# Feature	TotalPosition	Positions	FeatureLength(s)	Strand	FPKM
 			print OUT "$feature\t$Chr_total_position\t$Chrpositions\t$featurelength\t$GTFHash{$chrom_name}{$feature}{1}[3]\t$FPKM\n";
 		}	
 	}
 	close OUT;
-	print "Finished with $OutputName FPKM file\n";
+	print "FPKM from GTF and FPKMWIG: Finished with $OutputName FPKM file\n";
 }
 
 1;

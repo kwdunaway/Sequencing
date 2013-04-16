@@ -24,23 +24,31 @@ use strict; use warnings;
 ####################################################################
 
 die "useage: extend_read_length.pl 
-    1) Input Bed File prefix (ex: DY_Chr)
-    2) Output Bed prefix without Chr (ex: NewDY will make NewDY_Chr*.bed files) 
+    1) Input Bed Dir
+    2) Output Bed Dir 
     3) Read Length extension (ex: 97)
 " unless @ARGV == 3;
 
-my $inputbedprefix = shift(@ARGV);
-my $outputbedprefix = shift(@ARGV);
+my $InDir = shift(@ARGV);
+my $OutDir = shift(@ARGV);
 my $readlengthextension = shift(@ARGV);
 
+my @Bedfiles;
 
-my @Chr;             # array that contains all the the names of the mouse chromosomes
-for (my $n = 1; $n< 20; $n++){
-    push(@Chr, $n);
+my $dir = $InDir;
+opendir(DIR, $dir) or die $!;
+while (my $file = readdir(DIR)) {
+
+    # We only want files
+    next unless (-f "$dir/$file");
+
+    # Use a regular expression to find files ending in .txt
+    next unless ($file =~ m/\.bed$/);
+
+#    print "$file\n";
+    push (@Bedfiles,$file);
 }
-push(@Chr, "M");
-push(@Chr, "X");
-push(@Chr, "Y");
+closedir(DIR);
 
 
 
@@ -48,15 +56,21 @@ push(@Chr, "Y");
 # Main Input loop #
 ###################
 
-while(@Chr){
-	my $chr = shift(@Chr);
-	my $inputfile = $inputbedprefix . $chr . ".bed";
-	open(IN, "<$inputfile") or die "cannot open $inputfile IN infile";
-	my $outfile = $outputbedprefix . "_Chr" . $chr . ".bed";
-	open(OUT, ">$outfile") or die "cannot open $outfile outfile";
+while(@Bedfiles){
+	my $infilename = $InDir . "/" . $Bedfiles[0];
+	my $outfilename = $OutDir . "/" . $Bedfiles[0];
+	open(IN, "<$infilename") or die "cannot open $infilename IN infile";
+	open(OUT, ">$outfilename") or die "cannot open $outfilename OUT outfile";
 
-	print "Processing $inputfile \n";
+#	my $chr = shift(@Chr);
+#	my $inputfile = $inputbedprefix . $chr . ".bed";
+#	open(IN, "<$inputfile") or die "cannot open $inputfile IN infile";
+#	my $outfile = $outputbedprefix . "_Chr" . $chr . ".bed";
+#	open(OUT, ">$outfile") or die "cannot open $outfile outfile";
 
+#	print "Processing $inputfile \n";
+	
+	print "Starting: " , $Bedfiles[0] , "\n";
 	while(<IN>){
 		chomp;
     	my @line = split ("\t", $_);
@@ -72,8 +86,6 @@ while(@Chr){
 		}
 		else {die "$line[5] does not equal + or - \n";}
 	}
-
-	close(IN);
-	close(OUT);
+	shift(@Bedfiles);
 }
 
