@@ -22,7 +22,7 @@ use strict; use warnings;
 ####################################################################
 
 die "This script needs the following arguments:
-    1) Input prefix
+    1) Input folder
     2) NewID
 " unless @ARGV == 2;
 
@@ -31,6 +31,16 @@ open(IN, "<$infile") or die "cannot open $infile infile";
 my $newid = shift(@ARGV);
 open(OUT, ">$output_filename") or die "cannot open $output_filename outfile";
 
+
+# Read all .bed files
+# Open file
+# Rename 1st row
+#
+# Was:
+# track name=PercMethylationchr1 description=PercentMethylationchr1 useScore=0 itemRgb=On db=hg18
+#
+# Now:
+# track name=$NewID_chr1 description=$NewID_chr1 useScore=0 itemRgb=On db=hg18
 
 
 

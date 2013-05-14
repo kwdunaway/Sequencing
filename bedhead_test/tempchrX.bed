@@ -1,0 +1,6 @@
+track name=PercMethylationchrX description=PercentMethylationchrX useScore=0 itemRgb=On db=hg18
+chr1    468     469     0.44    0       +       0       0       27,74,210
+chr1    470     471     0.44    0       +       0       0       27,74,210
+chr1    483     484     1.00    0       +       0       0       210,27,27
+chr1    488     489     0.79    0       +       0       0       27,210,57
+
