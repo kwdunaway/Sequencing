@@ -3,17 +3,17 @@ BEGIN {push @INC, "/home/kwdunaway/perl_script";}
 use strict; use warnings;
 use SeqProcess;
 
-###############################################################################################
+##########################################################################################
 # Author: Keith Dunaway & Roy Chu
 # Email: kwdunaway@ucdavis.edu & rgchu@ucdavis.edu
-# Date: 2-12-2013
+# Date: 5-12-2013
 # Script Name: ChIP_SeqProcess.pl
 #
 # This script processes the subroutines in SeqProcess.pm.
 #
 # Arguments: See Below
 #
-################################################################################################
+##########################################################################################
 
 ####################################################################
 # Command Line Error Checking. Global Variables and I/O Initiation #
@@ -23,14 +23,16 @@ die "ChIP_SeqProcess.pl needs the following parameters:
     1) Folder path to contain data (e.g. /home/user/Folder/)(No spaces in path)
     2) Raw data file folder (the extension is .fq.gz (Fastq gzipped) and directory only contains .fq.gz) 
     3) File prefix for created files (general name for new files)
-    4) Final Read length (for reads to be extended to)
-    5) WIG Track Color (in RRR,GGG,BBB format)
-    6) Maximum Duplicate Reads (1 for no duplicate reads)
-" unless @ARGV == 6;
+    4) Species (mm9 or hg18)
+    5) Final Read length (for reads to be extended to)
+    6) WIG Track Color (in RRR,GGG,BBB format)
+    7) Maximum Duplicate Reads (1 for no duplicate reads)
+" unless @ARGV == 7;
 
 my $ExperimentTopDir = shift(@ARGV);
 my $rawfqfolder = shift(@ARGV);
 my $FilePrefix = shift(@ARGV);
+my $Species = shift(@ARGV);
 my $FinalReadLength = shift(@ARGV);
 my $WIGTrackColor = shift(@ARGV);
 my $MaxDupReads = shift(@ARGV);
@@ -49,10 +51,22 @@ my $commandline = ""; #inputs for command line
 # Computer specific paths #
 ###########################
 
-my $addtoPATH = "/home/kwdunaway/tuxedo/bowtie-0.12.7/:/home/kwdunaway/tuxedo/tophat-1.4.1.Linux_x86_64/:/home/kwdunaway/tuxedo/samtools/:/home/kwdunaway/tuxedo/cufflinks-1.3.0.Linux_x86_64/";
-my $mm9path = "/home/kwdunaway/mm9/Mus_musculus_UCSC_mm9/Mus_musculus/UCSC/mm9/Sequence/BowtieIndex/genome";
-my $hg18path = "/home/kwdunaway/hg18/hg18";
+# Bowtie path
+my $addtoPATH = ":/home/kwdunaway/tuxedo/bowtie-0.12.7";
+# Tophat path
+$addtoPATH = $addtoPATH . ":/home/kwdunaway/tuxedo/tophat-1.4.1.Linux_x86_64";
+# Samtools path
+$addtoPATH = $addtoPATH . ":/home/kwdunaway/tuxedo/samtools";
+# Cufflinks path
+$addtoPATH = $addtoPATH . ":/home/kwdunaway/tuxedo/cufflinks-1.3.0.Linux_x86_64";
 
+my $refpath = "";
+
+if($Species eq "mm9"){
+	$refpath = "/work/kwdunaway/mm9/Mus_musculus_UCSC_mm9/Mus_musculus/UCSC/mm9/Sequence/BowtieIndex/genome";
+} elsif ($Species eq "hg18"){
+	$refpath = "/work/kwdunaway/hg18/hg18";
+} else {die "Species needs to be either mm9 or hg18, not: " , $Species;}
 
 ####################
 # Global Variables #
@@ -83,14 +97,14 @@ my $visfpkmwig = $ExperimentTopDir . $FilePrefix . "_VisFPKMWIG/" . $FilePrefix 
 SeqProcess::add_path($addtoPATH);
 
 # (2) Unzip zipped files, filter them, and combine into one .fq file
-SeqProcess::filter_zip($rawfqfolder);
+#SeqProcess::filter_zip($rawfqfolder);
 
 # (3) Make folder for experiment and run Bowtie (separates reads between aligned and non-aligned)
-SeqProcess::run_bowtie($ExperimentTopDir, $FilePrefix, $mm9path, $filtered_fastq);
+SeqProcess::run_bowtie($ExperimentTopDir, $FilePrefix, $refpath, $filtered_fastq);
 
 # (4) Remove made files
-print "Removing $filtered_fastq\n";
-`rm $filtered_fastq`;
+#print "Removing $filtered_fastq\n";
+#`rm $filtered_fastq`;
 
 
 ########################################################################################
