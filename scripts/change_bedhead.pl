@@ -2,11 +2,11 @@
 use strict; use warnings;
 
 ##########################################################################################
-# Author: Keith Dunaway
-# Email: kwdunaway@ucdavis.edu
-# Script Name: rename_methbed_head_hg18.pl
+# Author: Keith Dunaway & Roy Chu
+# Email: kwdunaway@ucdavis.edu rgchu@ucdavis.edu
+# Script Name: change_bedhead.pl
 # Version: 0.1
-# Last Updated: 5-6-2013
+# Last Updated: 5-15-2013
 #
 # This script reads every bed file in the input directory and changes "PercMethylation" 
 # in the track name and "PercentMethylation" in the description to a new name.
