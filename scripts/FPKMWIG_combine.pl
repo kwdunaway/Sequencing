@@ -2,8 +2,8 @@
 use strict; use warnings;
 
 ###############################################################################################
-# Author: Keith Dunaway
-# Email: kwdunaway@ucdavis.edu
+# Author: Keith Dunaway & Roy Chu
+# Email: kwdunaway@ucdavis.edu rgchu@ucdavis.edu
 # Date: 5-17-2012
 # Script Name: FPKMWIG_combine.pl
 #
@@ -37,8 +37,10 @@ die "useage: FPKMWIG_combine.pl
 " unless @ARGV == 7;
 my $inputfirstprefix = shift(@ARGV);
 my $inputfirstmultiplier = shift(@ARGV);
+my $inputfirstbed = shift(@ARGV);
 my $inputsecondprefix = shift(@ARGV);
 my $inputsecondmultiplier = shift(@ARGV);
+my $inputsecondbed = shift(@ARGV);
 my $outprefix = shift(@ARGV);
 my $color = shift(@ARGV);
 my $tracknameprefix = shift(@ARGV);
@@ -52,6 +54,18 @@ push(@Chr, "X");
 push(@Chr, "Y");
 
 #push(@Chr, "7");
+
+#############################################
+#    Find Multiplier from BED directory     #
+#############################################
+
+my $filedir = $inputfirstbed . "*";
+my $firsttotal = `wc -l $filedir | grep "total"`;
+$firsttotal =~ s/\D//g;
+$filedir = $inputsecondbed . "*";
+my $secondtotal = `wc -l $filedir | grep "total"`;
+$secondtotal =~ s/\D//g;
+my $secondmultiplier = $firsttotal/$secondtotal;
 
 #############################################
 # Calculate and print OUT FPKM from file(s) #
