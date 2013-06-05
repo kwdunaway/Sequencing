@@ -28,44 +28,45 @@ use strict; use warnings;
 
 die "useage: FPKMWIG_combine.pl 
     1) Input prefix for first FPKM WIG files [leave out chrom # and .wig]
-    2) Multiplier for first Input file
+    2) BED directory for first Input file
     3) Input prefix for second FPKM WIG files [leave out chrom # and .wig]
-    4) Multiplier for second Input file
+    4) BED directory for second Input file
     5) Output prefix FPKM combined wig file
     6) Color (RRR,GGG,BBB format)
     7) Track name
 " unless @ARGV == 7;
 my $inputfirstprefix = shift(@ARGV);
-my $inputfirstmultiplier = shift(@ARGV);
 my $inputfirstbed = shift(@ARGV);
 my $inputsecondprefix = shift(@ARGV);
-my $inputsecondmultiplier = shift(@ARGV);
 my $inputsecondbed = shift(@ARGV);
 my $outprefix = shift(@ARGV);
 my $color = shift(@ARGV);
 my $tracknameprefix = shift(@ARGV);
 
-my @Chr;             # array that contains all the the names of the mouse chromosomes
-for (my $n = 1; $n< 20; $n++){
-    push(@Chr, $n);
+# Scan WIG directory for number of chromosomes
+my @Chr; # Holds all the chromosome numbers (e.g. 19, M)
+my $filedir = $inputfirstprefix;
+$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path from the input prefix
+my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+@files = grep /hr(.+)\.wig/, @files; # Takes only the files with "hr*.wig"
+
+foreach my $file (@files) {
+	$file =~ /hr(.+)\.wig/; # For each of those files, extract the chromosome number
+	push (@Chr, $1); # Add to list of chromosome numbers
 }
-push(@Chr, "M");
-push(@Chr, "X");
-push(@Chr, "Y");
-
-#push(@Chr, "7");
+@Chr = sort @Chr; # Sort list of chromosome numbers
 
 #############################################
-#    Find Multiplier from BED directory     #
+#   Find Multiplier from BED directories    #
 #############################################
 
-my $filedir = $inputfirstbed . "*";
-my $firsttotal = `wc -l $filedir | grep "total"`;
+my $allfiles = $inputfirstbed . "*";
+my $firsttotal = `wc -l $allfiles | grep "total"`;
 $firsttotal =~ s/\D//g;
-$filedir = $inputsecondbed . "*";
-my $secondtotal = `wc -l $filedir | grep "total"`;
+$allfiles = $inputsecondbed . "*";
+my $secondtotal = `wc -l $allfiles | grep "total"`;
 $secondtotal =~ s/\D//g;
-my $secondmultiplier = $firsttotal/$secondtotal;
+my $secondmultiplier = -$firsttotal/$secondtotal;
 
 #############################################
 # Calculate and print OUT FPKM from file(s) #
@@ -119,7 +120,7 @@ while(@Chr)
 				$secondheight = $linesecond[1];
 				if($secondpos < $firstpos){
 					my $position = $secondpos;
-					my $height = $secondheight * $inputsecondmultiplier;
+					my $height = $secondheight * $secondmultiplier;
 #						if ($height > 0) {print $height , "\n";} 
 					if($height != 0){
 #							if ($height > 0) {print $height , "\t printed", "\n";} 
@@ -142,7 +143,7 @@ while(@Chr)
 		else{
 			if($firstpos == $secondpos){
 				my $position = $firstpos;
-				my $height = ($firstheight * $inputfirstmultiplier) + ($secondheight * $inputsecondmultiplier);
+				my $height = $firstheight + ($secondheight * $secondmultiplier);
 #					if ($height > 0) {print $height , "\n";} 
 				if($height != 0){
 #						if ($height > 0) {print $height , "\t printed", "\n";} 
@@ -153,7 +154,7 @@ while(@Chr)
 			}
 			else{
 				my $position = $firstpos;
-				my $height = $firstheight * $inputfirstmultiplier;
+				my $height = $firstheight;
 #					if ($height > 0) {print $height , "\n";} 
 				if($height != 0){
 #						if ($height > 0) {print $height , "\t printed", "\n";} 
