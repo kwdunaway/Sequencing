@@ -52,12 +52,20 @@ sub change_bedhead
 	# Input
 	my ($inputfolder, $newid) = @_;
 
-	my $filedir = $inputfolder;
-	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path
-	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
-	@files = grep /\.bed/, @files; # Takes only the bed files
-	foreach my $infile (@files) {
 
+    opendir (DIR, $inputfolder) or die "Cannot open DIR $inputfolder";
+    my @files;
+    while (my $file = readdir(DIR)) {
+        my $temp = $inputfolder . "/" . "$file";
+#        print $temp , "\n";
+        push(@files, $temp);
+    }
+#	my $filedir = $inputfolder;
+#	$filedir =~ s/^(.*\/)[^\/]*$/$1/; # Gets top directory path
+#	my @files = glob( $filedir . '*' ); # Gets list of all files in directory
+#	@files = grep /\.bed/, @files; # Takes only the bed files
+	foreach my $infile (@files) {
+		print $infile , "\n";
 		# File I/O
 		open(IN, "<$infile") or die "Error: change_bedhead.pl: cannot open $inputfolder infile";
 		my $outfile = "temp_chr.bed";
@@ -95,6 +103,9 @@ sub change_bedhead
 
 	}
 }
+
+my $commandline = "rm " . $inputfolder . "/temp_chr.bed";
+`$commandline`;
 
 __END__
 my $fline = chop($firstline);
