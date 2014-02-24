@@ -1,0 +1,9 @@
+Examples of how to use git
+
+
+git add .
+git rm scripts/AveragePercentMethylationAcrossBED.pl
+git rm -f scripts/AveragePercentMethylationAcrossBED.pl
+git commit -m "Created AvgMeth.pl and removed AveragePercentMethylationAcrossBED.pl"
+git push
+git pull
