@@ -2,18 +2,16 @@
 use strict; use warnings;
 
 ###############################################################################################
-# Author: Roy Chu
+# Author: Roy Chu and Keith Dunaway
 # Email: rgchu@ucdavis.edu
-# Date: 1-8-2014
-# Script Name: AveragePercentMethylationAcrossBED.pl
+# Date: 2-24-2014
+# Script Name: AvgMeth.pl
 #
 # This script calculates average percent methylation of all CpG sites in each read of a 
 # BED file.
 #
 # Arguments:
-#    1) Input BED file
-#    2) Input Percent_Methyl Folder
-#    3) Output file
+#    <see below>
 #
 ################################################################################################
 
@@ -23,12 +21,12 @@ use strict; use warnings;
 # Command Line Error Checking. Global Variables and I/O Initiation #
 ####################################################################
 
-die "usage: PMDS_Percent_Methyl.pl 
+die "usage: AvgMeth.pl
     1) Output file
     2) Input BED file with PMDs
     3) Minimum CpG Site Threshold 
     4+) Input Percent Methylation Folder
-" unless @ARGV >= 4;
+" unless @ARGV > 3;
 
 my $outputname = shift(@ARGV);	# Output with average percentage methylation per PMD
 open(OUT, ">$outputname") or die "AveragePercentMethylationAcrossBED.pl: Error: cannot open $outputname output file";
@@ -44,50 +42,12 @@ my $linecount = 0; # Line count of the BED File
 ############################################
 #           Reading Input BED File         #
 ############################################
+# Inputs all of the data in the BED file 
 
-#               Header of Input File    
-
-my $header = <IN>;
-if ($header =~ /chr/)	# No header, first line is data
-{	
-}
-else			# Header found
-{
-	$header = <IN>; # Grab first line of data
-}
-
-# Process first line of data
-chomp $header;
-my @line = split("\t",$header);
-$chrarray[$linecount][0][0] = $line[0];	# Chromosome 	[0][0]
-$chrarray[$linecount][0][1] = $line[1];	# Start		[0][1]
-$chrarray[$linecount][0][2] = $line[2];	# End		[0][2]
-for(my $i = 0; $i < $#ARGV+1; $i++)		# For each input folder
-{
-	# Initialize
-	$chrarray[$linecount][$i+1][0] = "NA";	# Average percentage methylation
-	$chrarray[$linecount][$i+1][1] = 0;	# Total Methylation
-	$chrarray[$linecount][$i+1][2] = 0;	# CpG sites
-}
-$linecount++;
-
-#              Header of Output File 
-
-print OUT "Chromosome\tStart\tEnd";
-for(my $i = 0; $i < $#ARGV+1; $i++)
-{
-	my @dirname = split('/', $ARGV[$i]);	# Seperate path from directory name
-	print OUT "\t", $dirname[@dirname-1];	# Print directory name
-}
-print OUT "\n";
-
-
-# 	      Store Input in 2D Array          
-
-while(<IN>)
-{ 
-	chomp;
-	my @line = split("\t",$_);
+my $firstline = <IN>;
+if ($firstline =~ /^chr/){	# Checks to see if the first line is not a header
+	print "No header found, processing first line.\n";
+	my @line = split("\t",$firstline);
 	$chrarray[$linecount][0][0] = $line[0];	# Chromosome
 	$chrarray[$linecount][0][1] = $line[1];	# Start
 	$chrarray[$linecount][0][2] = $line[2];	# End
@@ -100,6 +60,28 @@ while(<IN>)
 	}
 	$linecount++;
 }
+else { # If first line IS a header line
+	print "Header Found!\n";
+}
+
+while(<IN>)
+{ 
+	chomp;
+	my @line = split("\t",$_);
+	
+	$chrarray[$linecount][0][0] = $line[0];	# Chromosome
+	$chrarray[$linecount][0][1] = $line[1];	# Start
+	$chrarray[$linecount][0][2] = $line[2];	# End
+	for(my $i = 0; $i < $#ARGV+1; $i++)		# For each input folder
+	{
+		# Initialize
+		$chrarray[$linecount][$i+1][0] = "NA";	# Average percentage methylation
+		$chrarray[$linecount][$i+1][1] = 0;	# Total Methylation
+		$chrarray[$linecount][$i+1][2] = 0;	# CpG sites
+	}
+	$linecount++;
+}
+print "past loading CpG islands: lines = $linecount \n";
 
 ############################################
 #           Reading Input Folders          #
@@ -110,6 +92,7 @@ for(my $i = 0; $i < $#ARGV+1; $i++)	# Run process for each folder
 	#           Obtain File Input Prefix
 
 	my $inputprefix; # File prefix
+
 	# Scan BED directory for number of chromosome files
 	my @Chr; # Holds all the chromosome numbers (e.g. 19, M)
 	my $filedir = $ARGV[$i];
@@ -138,6 +121,7 @@ for(my $i = 0; $i < $#ARGV+1; $i++)	# Run process for each folder
 		$filename = $inputprefix . $chrarray[$count][0][0] . ".bed";
 
 		open (BED, "<$filename") or die "PMDS_Percent_Methyl.pl: Error: Couldn't open chromosome file $filename\n";
+		print "Opening $filename \n";
 
 		my $bedline = <BED>;  	# Get rid of header line
 		while(<BED>)
