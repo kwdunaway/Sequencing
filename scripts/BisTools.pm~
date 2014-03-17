@@ -107,87 +107,85 @@ sub avgmeth
 
 		#                   Variables
 
-	my $count = 0; # Count for BED reading loop
-	my $filename; # Chromosome file name
+		my $count = 0; # Count for BED reading loop
+		my $filename; # Chromosome file name
 
-	#           Process Input of Each File          
+		#           Process Input of Each File          
 
-	while($count < $linecount)	# Run until end of BED file
-	{
-		# Open chromosome file
-		$filename = $inputprefix . $chrarray[$count][0][0] . ".bed";
-
-		open (BED, "<$filename") or die "PMDS_Percent_Methyl.pl: Error: Couldn't open chromosome file $filename\n";
-		print "Opening $filename \n";
-
-		my $bedline = <BED>;  	# Get rid of header line
-		while(<BED>)
+		while($count < $linecount)	# Run until end of BED file
 		{
-			my @bedlinearray = split("\t",$_);
-			# If undefined, end reading of this file
-			if(!defined $bedlinearray[0] || !defined $chrarray[$count][0][0])
+			# Open chromosome file
+			$filename = $inputprefix . $chrarray[$count][0][0] . ".bed";
+
+			open (BED, "<$filename") or die "PMDS_Percent_Methyl.pl: Error: Couldn't open chromosome file $filename\n";
+			print "Opening $filename \n";
+
+			my $bedline = <BED>;  	# Get rid of header line
+			while(<BED>)
 			{
-				last;
-			}
-			# If diff chr, end reading of this file
-			if($bedlinearray[0] ne $chrarray[$count][0][0])	
-			{
-				last;
-			}
-			# Go to next line if nothing found
-			if($bedlinearray[2] > $chrarray[$count][0][2]) 
-			{
-				$chrarray[$count][$i+1][0] = "NA";
-				$count++;
-			} 
-			else
-			{
-				# If within the range, then add to total meth
-				if($bedlinearray[1] >= $chrarray[$count][0][1] && $bedlinearray[2] <= $chrarray[$count][0][2])
+				my @bedlinearray = split("\t",$_);
+				# If undefined, end reading of this file
+				if(!defined $bedlinearray[0] || !defined $chrarray[$count][0][0])
 				{
-					my @dash = split("-", $bedlinearray[3]);
-					$chrarray[$count][$i+1][1] += $dash[0];	# Add percentage methylation
-					$chrarray[$count][$i+1][2]++;			# Add to total sites
+					last;
 				}
-				# Otherwise, skip to starting location of next region to get in the range
+				# If diff chr, end reading of this file
+				if($bedlinearray[0] ne $chrarray[$count][0][0])	
+				{
+					last;
+				}
+				# Go to next line if nothing found
+				if($bedlinearray[2] > $chrarray[$count][0][2]) 
+				{
+					$chrarray[$count][$i+1][0] = "NA";
+					$count++;
+				} 
+				else
+				{
+					# If within the range, then add to total meth
+					if($bedlinearray[1] >= $chrarray[$count][0][1] && $bedlinearray[2] <= $chrarray[$count][0][2])
+					{
+						my @dash = split("-", $bedlinearray[3]);
+						$chrarray[$count][$i+1][1] += $dash[0];	# Add percentage methylation
+						$chrarray[$count][$i+1][2]++;			# Add to total sites
+					}
+					# Otherwise, skip to starting location of next region to get in the range
+				}
+			}
+			close BED;
+		}
+	}
+
+	############################################
+	#     Calculate Percentage Methylation     #
+	############################################
+
+	#         Print results into OUT file
+
+	for(my $i = 0; $i < $linecount; $i++)
+	{
+		print OUT $chrarray[$i][0][0], "\t", $chrarray[$i][0][1], "\t", $chrarray[$i][0][2];
+
+		for(my $k = 0; $k < $#arguments+1; $k++)
+		{
+			# Sites under threshold -> "NA"
+			if($chrarray[$i][$k+1][2] < $threshold || $chrarray[$i][$k+1][2] == 0)	
+			{
+				print OUT "\tNA";
+			}
+			# Sites Found -> Calculate average percent methylation
+			else				
+			{
+				$chrarray[$i][$k+1][0] = ($chrarray[$i][$k+1][1])/($chrarray[$i][$k+1][2]); # Calculate average
+				my $rounded = sprintf("%.5f", $chrarray[$i][$k+1][0]);
+				print OUT "\t", $rounded;
 			}
 		}
-		close BED;
+		print OUT "\n";
 	}
-}
 
-############################################
-#     Calculate Percentage Methylation     #
-############################################
-
-#         Print results into OUT file
-
-for(my $i = 0; $i < $linecount; $i++)
-{
-	print OUT $chrarray[$i][0][0], "\t", $chrarray[$i][0][1], "\t", $chrarray[$i][0][2];
-
-	for(my $k = 0; $k < $#ARGV+1; $k++)
-	{
-		# Sites under threshold -> "NA"
-		if($chrarray[$i][$k+1][2] < $threshold || $chrarray[$i][$k+1][2] == 0)	
-		{
-			print OUT "\tNA";
-		}
-		# Sites Found -> Calculate average percent methylation
-		else				
-		{
-			$chrarray[$i][$k+1][0] = ($chrarray[$i][$k+1][1])/($chrarray[$i][$k+1][2]); # Calculate average
-			my $rounded = sprintf("%.5f", $chrarray[$i][$k+1][0]);
-			print OUT "\t", $rounded;
-		}
-	}
-	print OUT "\n";
-}
-
-close IN;
-close OUT;
-
-
+	close IN;
+	close OUT;
 }
 
 ###########################################################################

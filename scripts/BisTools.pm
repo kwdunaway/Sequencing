@@ -13,8 +13,8 @@ use strict; use warnings;
 # Descriptions of each subroutine can be found above their code.
 #
 # Subroutines:             
-#       (1) avgmeth: 		Average Percent Methylation
-#	(2) chrfilelist: 	Scan Directory for Chromosomes and File Prefix
+#       (1) avgmeth:        Average Percent Methylation
+#       (2) chrfilelist:    Scan Directory for Chromosomes and File Prefix
 #
 #
 ##########################################################################################
@@ -22,13 +22,13 @@ use strict; use warnings;
 ###########################################################################
 #                      (1) Average Percent Methylation                    #
 # Description: Calculates average percent methylation of all CpG sites    #
-#              in each read of a BED file.			   	  #
-#       Input: 1) Output file						  #
-#              2) Input BED file with PMDs				  #
-#              3) Minimum CpG Site Threshold 				  #
-#              4+) Input Percent Methylation Folder			  #
+#              in each read of a BED file.                                #
+#       Input: 1) Output file                                             #
+#              2) Input BED file with PMDs                                #
+#              3) Minimum CpG Site Threshold                              #
+#              4+) Input Percent Methylation Folder                       #
 #                                                                         #
-#      Output: Txt file with average percentage methylation per PMD	  #
+#      Output: Txt file with average percentage methylation per PMD       #
 ###########################################################################
 
 sub avgmeth
@@ -191,14 +191,12 @@ sub avgmeth
 ###########################################################################
 #           (2) Scan Directory for Chromosomes and File Prefix            #
 # Description: Creates a list of the chromosome numbers or letters        #
-#	       (e.g. 10, X) found in the directory and also finds the 	  #
-#	       general file prefix used in the directory	   	  #
-#       Input: 1) Output file						  #
-#              2) Input BED file with PMDs				  #
-#              3) Minimum CpG Site Threshold 				  #
-#              4+) Input Percent Methylation Folder			  #
+#              (e.g. 10, X) found in the directory and also finds the     #
+#              general file prefix used in the directory                  #
+#       Input: Directory with Generic File Names containing Chromosome #'s#
 #                                                                         #
-#      Output: Txt file with average percentage methylation per PMD	  #
+#      Return: 1) Array of Chromosome Suffixes (e.g. 15, Y, hap6)         #
+#              2) General File Prefix					  #
 ###########################################################################
 
 sub chrfilelist 
