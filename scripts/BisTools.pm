@@ -20,14 +20,14 @@ use strict; use warnings;
 ##########################################################################################
 
 ###########################################################################
-#                      (1) Average Percent Methylation                    #
-# Description: Calculates average percent methylation of all CpG sites    #
-#              in each read of a BED file.			   	  #
-#       Input: 1) Output file						  #
-#              2) Input BED file with PMDs				  #
-#              3) Minimum CpG Site Threshold 				  #
-#              4+) Input Percent Methylation Folder			  #
-#                                                                         #
+#                      (1) Average Percent Methylation
+# Description: Calculates average percent methylation of all CpG sites
+#              in each line of a BED file.
+#       Input: 1) Output file
+#              2) Input BED file with PMDs
+#              3) Minimum CpG Site Threshold
+#              4+) Input Percent Methylation Folder
+#                                                                  
 #      Output: Txt file with average percentage methylation per PMD	  #
 ###########################################################################
 
@@ -52,6 +52,8 @@ sub avgmeth
 	############################################
 	# Inputs all of the data in the BED file 
 
+	#removebedheader() 
+	# Check to see about passing file handles
 	my $firstline = <IN>;
 	if ($firstline =~ /^chr/)
 	{	# Checks to see if the first line is not a header
@@ -73,7 +75,10 @@ sub avgmeth
 	{ # If first line IS a header line
 		print "Header Found!\n";
 	}
+	#removebedheader() END
 
+	#LoadBed()
+		#removebedheader
 	while(<IN>)
 	{ 
 		chomp;
