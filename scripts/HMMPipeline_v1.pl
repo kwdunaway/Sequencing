@@ -5,8 +5,8 @@ use strict; use warnings;
 # Author: Keith Dunaway
 # Email: kwdunaway@ucdavis.edu
 # Script Name: HMMPipeline_v1.pl
-# Version: 1.0
-# Last Updated: 2/6/2014
+# Version: 1.1
+# Last Updated: 5/28/2014
 #
 # This is a wrapper that puts has minimal input and automates output. It is NOT
 #   memory efficient.
@@ -26,13 +26,14 @@ use strict; use warnings;
 my $BED_to_Korf_path = "/data/scratch/programs/Methylation_Domain_Pipeline/Example_Run_Folder/chromFa/BED_to_Korf_input.pl";
 my $RunMethylationDomainPipeline_path = "/data/scratch/programs/Methylation_Domain_Pipeline/Example_Run_Folder/RunMethylationDomainPipeline.pl";
 my $hg18fastapath = "/data/scratch/genomes/hg18/chrom_fasta/";
+my $hg19fastapath = "/data/scratch/genomes/hg19/chrom_fasta/";
 my $rn4fastapath = "/data/scratch/genomes/rn4/chrom_fasta/";
 
 # I/O check
 die "This script needs the following arguments:
     1) Permeth bed files prefix (leave off chr##.bed)
     2) Experiment Name (prefix for all outfiles)
-    3) genome (hg18 or rn4)
+    3) genome (hg18, hg19, or rn4)
     4) HMM model name (ex: Placenta_30_upd.hmm)
 " unless @ARGV == 4;
 
@@ -73,6 +74,34 @@ if($genome eq "hg18"){
                    "chr22" => '49691432',
                    "chrX" => '154913754',
                    "chrY" => '57772954',);
+}
+if($genome eq "hg19"){
+		$GenomeFASTApath = $hg19fastapath;
+		$CPGIslandsbed = "hg19_genome_CGI.bed";
+        %Chroms = ("chr1" => '249250621',
+                   "chr2" => '243199373',
+                   "chr3" => '198022430',
+                   "chr4" => '191154276',
+                   "chr5" => '180915260',
+                   "chr6" => '171115067',
+                   "chr7" => '159138663',
+                   "chr8" => '146364022',
+                   "chr9" => '141213431',
+                   "chr10" => '135534747',
+                   "chr11" => '135006516',
+                   "chr12" => '133851895',
+                   "chr13" => '115169878',
+                   "chr14" => '107349540',
+                   "chr15" => '102531392',
+                   "chr16" => '90354753',
+                   "chr17" => '81195210',
+                   "chr18" => '78077248',
+                   "chr19" => '59128983',
+                   "chr20" => '63025520',
+                   "chr21" => '48129895',
+                   "chr22" => '51304566',
+                   "chrX" => '155270560',
+                   "chrY" => '59373566',);
 }
 elsif($genome eq "rn4"){
 		$GenomeFASTApath = $rn4fastapath;
