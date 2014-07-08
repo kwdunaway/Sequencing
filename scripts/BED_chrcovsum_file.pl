@@ -18,16 +18,19 @@ use strict; use warnings;
 ####################################################################
 
 die "BED_chrcovsum needs the following parameters:
-    1) Input BED file to be summed
-" unless @ARGV == 1;
+    1+) Input BED file to be summed
+" unless @ARGV > 0;
 
-my $infile = shift(@ARGV);
 
-my %Results = BED_chrcovsum_file($infile);
-foreach my $chr (sort(keys %Results)){
-	print $chr , "\t", $Results{$chr} , "\n";
+while (@ARGV){
+	my $infile = shift(@ARGV);
+	my %Results = BED_chrcovsum_file($infile);
+	print "chr" , "\t", $infile , "\n";
+	foreach my $chr (sort(keys %Results)){
+		print $chr , "\t", $Results{$chr} , "\n";
+	}
+	print "\n";
 }
-
 
 
 ###############
