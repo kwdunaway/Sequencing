@@ -76,69 +76,95 @@ my $strandc = 11;
 # Main Loop #
 #############
 
-while(<IN>){
-	my @line = split("\t", $_);
-	my $chrom = $line[$chrc];
+if ($meth_type eq "CG") # Run this process if CG
+{
+	while(<IN>){
+		my @line = split("\t", $_);
+		my $chrom = $line[$chrc];
 	
-	#takes out weird chromosomes like chr#_random and ect.
-	if ($chrom =~ /_/) {next;}
+		#takes out weird chromosomes like chr#_random and ect.
+		if ($chrom =~ /_/) {next;}
 
-	my $start = $line[$startc];
-	my $methstring = substr $line[$methc], 5;
-	my $strand = substr $line[$strandc], 5,1;
+		my $start = $line[$startc];
+		my $methstring = substr $line[$methc], 5;
+		my $strand = substr $line[$strandc], 5,1;
 
-	# Skips read if only looking at positive or negative strand
-	if($strand eq "-" && $strand_type eq "positive") {next;}
-	if($strand eq "+" && $strand_type eq "negative") {next;}
+		# Skips read if only looking at positive or negative strand
+		if($strand eq "-" && $strand_type eq "positive") {next;}
+		if($strand eq "+" && $strand_type eq "negative") {next;}
 
-	# If duplicate line, take longest read and then skip
-	if($prevstart == $start && $prevstrand eq $strand) {
-		if(length($methstring) > length($prevmethstring)){
-			$prevmethstring = $methstring;
+		# If duplicate line, take longest read and then skip
+		if($prevstart == $start && $prevstrand eq $strand) {
+			if(length($methstring) > length($prevmethstring)){
+				$prevmethstring = $methstring;
+			}
+			next;
 		}
-		next;
-	}
 
-	# On next chromosome
-	if($chrom ne $currentchrom){
-		if($currentchrom ne "Not Set Yet"){
-			if ($meth_type eq "CG")
-			{
+		# On next chromosome
+		if($chrom ne $currentchrom){
+			if($currentchrom ne "Not Set Yet"){
 				Print_MethylationHash(\%Methylation, $outprefix, $currentchrom, $bedprefix);
 			}
-			else
-			{
+			%Methylation = ();
+			$currentchrom = $chrom;
+			print "Starting " , $chrom , "\n";
+		}
+	
+		if($prevmethstring =~ m/$searchchars[0]/ || $prevmethstring =~ m/$searchchars[1]/){
+			Addto_MethylationHash(\%Methylation, $searchchars[0], $prevmethstring, $prevstart, $prevstrand);
+		}
+		$prevmethstring = $methstring;
+		$prevstart = $start;
+		$prevstrand = $strand;
+	}
+Addto_MethylationHash(\%Methylation, $searchchars[0], $prevmethstring, $prevstart, $prevstrand);
+Print_MethylationHash(\%Methylation, $outprefix, $currentchrom, $bedprefix);
+}
+else # Run this process for CHG and CHH
+{
+	while(<IN>){
+		my @line = split("\t", $_);
+		my $chrom = $line[$chrc];
+	
+		#takes out weird chromosomes like chr#_random and ect.
+		if ($chrom =~ /_/) {next;}
+
+		my $start = $line[$startc];
+		my $methstring = substr $line[$methc], 5;
+		my $strand = substr $line[$strandc], 5,1;
+
+		# Skips read if only looking at positive or negative strand
+		if($strand eq "-" && $strand_type eq "positive") {next;}
+		if($strand eq "+" && $strand_type eq "negative") {next;}
+
+		# If duplicate line, take longest read and then skip
+		if($prevstart == $start && $prevstrand eq $strand) {
+			if(length($methstring) > length($prevmethstring)){
+				$prevmethstring = $methstring;
+			}
+			next;
+		}
+
+		# On next chromosome
+		if($chrom ne $currentchrom){
+			if($currentchrom ne "Not Set Yet"){
 				Print_MethylationHash_yz(\%Methylation, $outprefix, $currentchrom, $bedprefix);
 			}
+			%Methylation = ();
+			$currentchrom = $chrom;
+			print "Starting " , $chrom , "\n";
 		}
-		%Methylation = ();
-		$currentchrom = $chrom;
-		print "Starting " , $chrom , "\n";
-	}
 	
-	if($prevmethstring =~ m/$searchchars[0]/ || $prevmethstring =~ m/$searchchars[1]/){
-		if ($meth_type eq "CG")
-		{
-			Addto_MethlationHash(\%Methylation, $searchchars[0], $prevmethstring, $prevstart, $prevstrand);
-		}
-		else
-		{
+		if($prevmethstring =~ m/$searchchars[0]/ || $prevmethstring =~ m/$searchchars[1]/){
 			Addto_MethylationHash_yz(\%Methylation, $searchchars[0], $prevmethstring, $prevstart, $prevstrand);
 		}
+		$prevmethstring = $methstring;
+		$prevstart = $start;
+		$prevstrand = $strand;
 	}
-	$prevmethstring = $methstring;
-	$prevstart = $start;
-	$prevstrand = $strand;
-}
-if ($meth_type eq "CG")
-{
-	Addto_MethlationHash(\%Methylation, $searchchars[0], $prevmethstring, $prevstart, $prevstrand);
-	Print_MethylationHash(\%Methylation, $outprefix, $currentchrom, $bedprefix);
-}
-else
-{
-	Addto_MethylationHash_yz(\%Methylation, $searchchars[0], $prevmethstring, $prevstart, $prevstrand);
-	Print_MethylationHash_yz(\%Methylation, $outprefix, $currentchrom, $bedprefix);
+Addto_MethylationHash_yz(\%Methylation, $searchchars[0], $prevmethstring, $prevstart, $prevstrand);
+Print_MethylationHash_yz(\%Methylation, $outprefix, $currentchrom, $bedprefix);
 }
 
 
@@ -146,7 +172,7 @@ else
 # Subroutines #
 ###############
 
-sub Addto_MethlationHash{
+sub Addto_MethylationHash{
 	my ($Methylation_ref, $charsearch, $methstring, $start, $strand) = @_;
 	
 	#Finds Methylated
