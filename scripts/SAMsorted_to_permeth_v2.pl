@@ -283,7 +283,7 @@ sub Print_MethylationHash_yz{
 		my $trueposstart = $posstart;
 		if($posstart < 0)
 		{
-			$trueposstart = ($posstart * -1) +1;
+			$trueposstart = ($posstart * -1) -1;
 			$str = "-";
 		}
 		my $posend = $trueposstart + 2;
