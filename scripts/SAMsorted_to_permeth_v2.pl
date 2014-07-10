@@ -48,7 +48,8 @@ my @searchchars;
 if ($meth_type eq "CG") { @searchchars = ("X","x");}
 elsif($meth_type eq "CHG") { @searchchars = ("Y","y");}
 elsif($meth_type eq "CHH") { @searchchars = ("Z","z");}
-else { die "Methylation type $meth_type is not one of:  CG, CHG, or CHH\n\n";}
+elsif($meth_type eq "CH") { @searchchars = ("Z","z", "Y","y");}
+else { die "Methylation type $meth_type is not one of:  CG, CHG, CHH, or CH\n\n";}
 
 my $strand_type = shift(@ARGV);
 unless (($strand_type eq "combined") || ($strand_type eq "positive") || ($strand_type eq "negative")) {
@@ -118,10 +119,10 @@ if ($meth_type eq "CG") # Run this process if CG
 		$prevstart = $start;
 		$prevstrand = $strand;
 	}
-Addto_MethylationHash(\%Methylation, $searchchars[0], $prevmethstring, $prevstart, $prevstrand);
-Print_MethylationHash(\%Methylation, $outprefix, $currentchrom, $bedprefix);
+	Addto_MethylationHash(\%Methylation, $searchchars[0], $prevmethstring, $prevstart, $prevstrand);
+	Print_MethylationHash(\%Methylation, $outprefix, $currentchrom, $bedprefix);
 }
-else # Run this process for CHG and CHH
+elsif($meth_type eq "CHG" || $meth_type eq "CHH") # Run this process for CHG and CHH
 {
 	while(<IN>){
 		my @line = split("\t", $_);
@@ -163,8 +164,53 @@ else # Run this process for CHG and CHH
 		$prevstart = $start;
 		$prevstrand = $strand;
 	}
-Addto_MethylationHash_yz(\%Methylation, $searchchars[0], $prevmethstring, $prevstart, $prevstrand);
-Print_MethylationHash_yz(\%Methylation, $outprefix, $currentchrom, $bedprefix);
+	Addto_MethylationHash_yz(\%Methylation, $searchchars[0], $prevmethstring, $prevstart, $prevstrand);
+	Print_MethylationHash_yz(\%Methylation, $outprefix, $currentchrom, $bedprefix);
+}
+else # Run this process for CH
+{
+	while(<IN>){
+		my @line = split("\t", $_);
+		my $chrom = $line[$chrc];
+	
+		#takes out weird chromosomes like chr#_random and ect.
+		if ($chrom =~ /_/) {next;}
+
+		my $start = $line[$startc];
+		my $methstring = substr $line[$methc], 5;
+		my $strand = substr $line[$strandc], 5,1;
+
+		# Skips read if only looking at positive or negative strand
+		if($strand eq "-" && $strand_type eq "positive") {next;}
+		if($strand eq "+" && $strand_type eq "negative") {next;}
+
+		# If duplicate line, take longest read and then skip
+		if($prevstart == $start && $prevstrand eq $strand) {
+			if(length($methstring) > length($prevmethstring)){
+				$prevmethstring = $methstring;
+			}
+			next;
+		}
+
+		# On next chromosome
+		if($chrom ne $currentchrom){
+			if($currentchrom ne "Not Set Yet"){
+				Print_MethylationHash_CH(\%Methylation, $outprefix, $currentchrom, $bedprefix);
+			}
+			%Methylation = ();
+			$currentchrom = $chrom;
+			print "Starting " , $chrom , "\n";
+		}
+	
+		if($prevmethstring =~ m/$searchchars[0]/ || $prevmethstring =~ m/$searchchars[1]/ || $prevmethstring =~ m/$searchchars[2]/ || $prevmethstring =~ m/$searchchars[3]/){
+			Addto_MethylationHash_CH(\%Methylation, $prevmethstring, $prevstart, $prevstrand);
+		}
+		$prevmethstring = $methstring;
+		$prevstart = $start;
+		$prevstrand = $strand;
+	}
+	Addto_MethylationHash_CH(\%Methylation, $prevmethstring, $prevstart, $prevstrand);
+	Print_MethylationHash_CH(\%Methylation, $outprefix, $currentchrom, $bedprefix);
 }
 
 
@@ -268,6 +314,58 @@ sub Addto_MethylationHash_yz{
 	}
 }
 
+sub Addto_MethylationHash_CH{
+	my ($Methylation_ref, $methstring, $start, $strand) = @_;
+	
+	my @search = ("Z", "Y");
+	foreach my $charsearch(@search)
+	{
+		my $offset = 0;
+		my $position = 0;
+		while ($position >= 0)
+		{
+  			$position = index($methstring, $charsearch, $offset);
+  			if($position == -1) {last;}
+ 			if($strand eq "+"){
+				my $startpos = $start + $position;
+				if(defined $Methylation_ref->{$startpos}) {$Methylation_ref->{$startpos} = $Methylation_ref->{$startpos} . "1";}
+				else {$Methylation_ref->{$startpos} = "1";}
+ 			}
+ 			elsif($strand eq "-"){
+				my $startpos = -($start + length($methstring) - $position -2);
+				if(defined $Methylation_ref->{$startpos}) {$Methylation_ref->{$startpos} = $Methylation_ref->{$startpos} . "1";}
+				else {$Methylation_ref->{$startpos} = "1";}
+ 			}
+ 			else { die "Strand not + or - but $strand \n";}
+			$offset=$position+1;
+		}
+	}
+
+	@search = ("z", "y");
+	foreach my $charsearch(@search)
+	{
+		my $offset = 0;
+		my $position = 0;
+		while ($position >= 0)
+		{
+  			$position = index($methstring, $charsearch, $offset);
+  			if($position == -1) {last;}
+ 			if($strand eq "+"){
+				my $startpos = $start + $position;
+				if(defined $Methylation_ref->{$startpos}) {$Methylation_ref->{$startpos} = $Methylation_ref->{$startpos} . "0";}
+				else {$Methylation_ref->{$startpos} = "0";}
+ 			}
+ 			elsif($strand eq "-"){
+				my $startpos = -($start + length($methstring) - $position -2);
+				if(defined $Methylation_ref->{$startpos}) {$Methylation_ref->{$startpos} = $Methylation_ref->{$startpos} . "0";}
+				else {$Methylation_ref->{$startpos} = "0";}
+ 			}
+ 			else { die "Strand not + or - but $strand \n";}
+			$offset=$position+1;
+		}
+	}
+}
+
 sub Print_MethylationHash{
 	my ($Methylation_ref, $outprefix, $currentchrom, $bedprefix) = @_;
 	
@@ -313,6 +411,41 @@ sub Print_MethylationHash_yz{
 			$str = "-";
 		}
 		my $posend = $trueposstart + 2;
+		my $methperc = 0;
+		my @methraw = split("",$Methylation_ref->{$posstart});
+		my $methnum = @methraw;
+		while(@methraw){
+			$methperc += $methraw[0];
+			shift(@methraw);
+		}
+		$methperc = $methperc / $methnum;
+		$methperc = sprintf("%.2f", $methperc);
+		my $color = "0,0,0"; #black
+		if ($methperc > 0 && $methperc <= .6) {$color = "27,74,210";} #blue
+		elsif ($methperc > .6 && $methperc <= .8) {$color = "27,210,57";} #green
+		elsif ($methperc > .8) {$color = "210,27,27";} #red
+		print OUT $currentchrom , "\t" , $trueposstart , "\t" , $posend , "\t" , $methperc , "-", $methnum , "\t" , "0\t", $str, "\t0\t0\t" , $color , "\n";
+	}
+	close OUT;
+}
+
+sub Print_MethylationHash_CH{
+	my ($Methylation_ref, $outprefix, $currentchrom, $bedprefix) = @_;
+	
+	my $outfile = $outprefix . "_" . $currentchrom . ".bed";
+	open(OUT, ">$outfile") or die "cannot open $outfile outfile";
+	print OUT "track name=" , $bedprefix, $currentchrom, " description=" , $bedprefix, "_", $currentchrom, " useScore=0 itemRgb=On db=" , $genome_version , "\n";
+	foreach my $posstart (sort { abs($a) <=> abs($b) }  keys %{$Methylation_ref}) {
+		#Example print format
+		#chr10   51332   51333   0.50-2  0       +       0       0       27,74,210
+		my $str = "+";
+		my $trueposstart = $posstart;
+		if($posstart < 0)
+		{
+			$trueposstart = ($posstart * -1) -1;
+			$str = "-";
+		}
+		my $posend = $trueposstart + 1;
 		my $methperc = 0;
 		my @methraw = split("",$Methylation_ref->{$posstart});
 		my $methnum = @methraw;
