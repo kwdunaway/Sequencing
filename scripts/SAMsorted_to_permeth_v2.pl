@@ -33,7 +33,7 @@ die "$0 needs the following parameters:
     2) Output files prefix (folder and prefix)
     3) Bed track prefix
     4) UCSC genome version (ex: hg19)
-    5) Methylation type (CG, CHG, or CHH)
+    5) Methylation type (CG, CHG, CHH, CH)
     6) Strand (combined, positive, or negative)
 " unless @ARGV == 6;
 
