@@ -421,9 +421,9 @@ sub Print_MethylationHash_yz{
 		$methperc = $methperc / $methnum;
 		$methperc = sprintf("%.2f", $methperc);
 		my $color = "0,0,0"; #black
-		if ($methperc > 0 && $methperc <= .6) {$color = "27,74,210";} #blue
-		elsif ($methperc > .6 && $methperc <= .8) {$color = "27,210,57";} #green
-		elsif ($methperc > .8) {$color = "210,27,27";} #red
+		if ($methperc == 0) {$color = "255,255,255";} #blue
+		elsif ($methperc > 0 && $str eq "-") {$color = "255,165,0";} #green
+		elsif ($methperc > 0 && $str eq "+") {$color = "255,0,255";} #red
 		print OUT $currentchrom , "\t" , $trueposstart , "\t" , $posend , "\t" , $methperc , "-", $methnum , "\t" , "0\t", $str, "\t0\t0\t" , $color , "\n";
 	}
 	close OUT;
@@ -456,9 +456,9 @@ sub Print_MethylationHash_CH{
 		$methperc = $methperc / $methnum;
 		$methperc = sprintf("%.2f", $methperc);
 		my $color = "0,0,0"; #black
-		if ($methperc > 0 && $methperc <= .6) {$color = "27,74,210";} #blue
-		elsif ($methperc > .6 && $methperc <= .8) {$color = "27,210,57";} #green
-		elsif ($methperc > .8) {$color = "210,27,27";} #red
+		if ($methperc == 0) {$color = "255,255,255";} #blue
+		elsif ($methperc > 0 && $str eq "-") {$color = "255,165,0";} #green
+		elsif ($methperc > 0 && $str eq "+") {$color = "255,0,255";} #red
 		print OUT $currentchrom , "\t" , $trueposstart , "\t" , $posend , "\t" , $methperc , "-", $methnum , "\t" , "0\t", $str, "\t0\t0\t" , $color , "\n";
 	}
 	close OUT;
