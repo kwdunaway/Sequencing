@@ -48,7 +48,7 @@ my @searchchars;
 if ($meth_type eq "CG") { @searchchars = ("X","x");}
 elsif($meth_type eq "CHG") { @searchchars = ("Y","y");}
 elsif($meth_type eq "CHH") { @searchchars = ("Z","z");}
-elsif($meth_type eq "CH") { @searchchars = ("Z","z", "Y","y");}
+elsif($meth_type eq "CH") { @searchchars = ("Z", "Y");}
 else { die "Methylation type $meth_type is not one of:  CG, CHG, CHH, or CH\n\n";}
 
 my $strand_type = shift(@ARGV);
@@ -202,7 +202,7 @@ else # Run this process for CH
 			print "Starting " , $chrom , "\n";
 		}
 	
-		if($prevmethstring =~ m/$searchchars[0]/ || $prevmethstring =~ m/$searchchars[1]/ || $prevmethstring =~ m/$searchchars[2]/ || $prevmethstring =~ m/$searchchars[3]/){
+		if($prevmethstring =~ m/$searchchars[0]/ || $prevmethstring =~ m/$searchchars[1]/){
 			Addto_MethylationHash_CH(\%Methylation, $prevmethstring, $prevstart, $prevstrand);
 		}
 		$prevmethstring = $methstring;
@@ -340,30 +340,6 @@ sub Addto_MethylationHash_CH{
 			$offset=$position+1;
 		}
 	}
-
-	@search = ("z", "y");
-	foreach my $charsearch(@search)
-	{
-		my $offset = 0;
-		my $position = 0;
-		while ($position >= 0)
-		{
-  			$position = index($methstring, $charsearch, $offset);
-  			if($position == -1) {last;}
- 			if($strand eq "+"){
-				my $startpos = $start + $position;
-				if(defined $Methylation_ref->{$startpos}) {$Methylation_ref->{$startpos} = $Methylation_ref->{$startpos} . "0";}
-				else {$Methylation_ref->{$startpos} = "0";}
- 			}
- 			elsif($strand eq "-"){
-				my $startpos = -($start + length($methstring) - $position -2);
-				if(defined $Methylation_ref->{$startpos}) {$Methylation_ref->{$startpos} = $Methylation_ref->{$startpos} . "0";}
-				else {$Methylation_ref->{$startpos} = "0";}
- 			}
- 			else { die "Strand not + or - but $strand \n";}
-			$offset=$position+1;
-		}
-	}
 }
 
 sub Print_MethylationHash{
@@ -446,22 +422,10 @@ sub Print_MethylationHash_CH{
 			$str = "-";
 		}
 		my $posend = $trueposstart + 1;
-		my $methperc = 0;
-		my @methraw = split("",$Methylation_ref->{$posstart});
-		my $methnum = @methraw;
-		while(@methraw){
-			$methperc += $methraw[0];
-			shift(@methraw);
-		}
-		$methperc = $methperc / $methnum;
-		$methperc = sprintf("%.2f", $methperc);
 		my $color = "0,0,0"; #black
-		if ($methperc > 0 && $str eq "-") {$color = "255,165,0";} #yellow
-		elsif ($methperc > 0 && $str eq "+") {$color = "255,0,255";} #magenta
-		if ($methperc != 0) 
-		{
-		print OUT $currentchrom , "\t" , $trueposstart , "\t" , $posend , "\t" , $methperc , "-", $methnum , "\t" , "0\t", $str, "\t0\t0\t" , $color , "\n";
-		}
+		if ($str eq "-") {$color = "255,165,0";} #yellow
+		elsif ($str eq "+") {$color = "255,0,255";} #magenta
+		print OUT $currentchrom , "\t" , $trueposstart , "\t" , $posend , "\t" ,$Methylation_ref->{$posstart}, "\t" , "0\t", $str, "\t0\t0\t" , $color , "\n";
 	}
 	close OUT;
 }
