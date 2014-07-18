@@ -418,12 +418,12 @@ sub Print_MethylationHash_CH{
 		my $trueposstart = $posstart;
 		if($posstart < 0)
 		{
-			$trueposstart = ($posstart * -1) -1;
+			$trueposstart = ($posstart * -1);
 			$str = "-";
 		}
 		my $posend = $trueposstart + 1;
 		my $color = "0,0,0"; #black
-		if ($str eq "-") {$color = "255,165,0";} #yellow
+		if ($str eq "-") {$color = "0,51,0";} #dark green
 		elsif ($str eq "+") {$color = "255,0,255";} #magenta
 		print OUT $currentchrom , "\t" , $trueposstart , "\t" , $posend , "\t" ,$Methylation_ref->{$posstart}, "\t" , "0\t", $str, "\t0\t0\t" , $color , "\n";
 	}
