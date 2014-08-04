@@ -1,10 +1,10 @@
 #!/usr/bin/perl 
 use strict; use warnings;
 
-###############################################################################################
+##########################################################################################
 # Author: Roy Chu and Keith Dunaway
 # Email: rgchu@ucdavis.edu
-# Date: 2-24-2014
+# Date: 8-4-2014
 # Script Name: gbcompliance.pl
 #
 # This script deals with certain genome browser errors, allowing replacement of 
@@ -13,7 +13,7 @@ use strict; use warnings;
 # Arguments:
 #    <see below>
 #
-################################################################################################
+##########################################################################################
 
 
 
