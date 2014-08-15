@@ -10,7 +10,7 @@ use strict; use warnings;
 # Takes SAM output from BS_Seeker2 and creates percentage methylation BED files that
 # can be uploaded to the UCSC genome browser or further analyzed through StochHMM.
 #
-# PCR duplicate filter: This script takes the longest read that matches an strand and
+# PCR duplicate filter: This script takes the longest read that matches a strand and
 # position of the same chromosome. If more than one read are the longest, it only takes
 # whichever read came first in the SAM file.
 #
