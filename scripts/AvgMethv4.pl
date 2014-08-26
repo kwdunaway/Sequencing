@@ -55,8 +55,10 @@ while(@ARGV){
 }
 
 # Global Variables
-my %bed_hash;	# Stores every field of lines in BED File and percentage methylation
-my %bed_array;	# Array version of the hash
+my %bed_hash;	# Hash-hash-hash, Stores the {chromosome}{start}{end} of the BED file (columns 1, 2, 3)
+my %bed_array;	# Hash-array-array, Sorted array of the hash 
+		# $bed_array{chromosome}[0][2] is the line count for that chromosome
+		# $bed_array{chromosome}[line count][0 for start, 1 for end]
 
 ##########################################################################
 #                       Reading Input BED File                           #
@@ -96,7 +98,7 @@ close BED;
 
 # Fill in array with hash information, this is done to sort the information
 foreach my $chr (keys %bed_hash){
-	# Initialize line count
+	# Initialize line count, varies for each chromosome
 	$bed_array{$chr}[0][2]=0;
 	# For each position, sort numerically
 	foreach my $start (sort {$a<=>$b} keys %{$bed_hash{$chr}}){
@@ -116,8 +118,8 @@ print "Finished loading input BED file.\n\n";
 # For each chromosome found in the array, search for data files for the #
 # chromosome in each folder. Load the chromosome input file from each   #
 # folder and fill in %outhash with information from the bed file using  #
-# the %bed_array: (1) chromosome (2) start (3) end & information from   #
-# the input file: (4) header name (5) percentage methylation data.      #
+# the %bed_array: (1) chromosome (2) start (3) end & CpG information 	#
+# from the input file: (4) header name (5) percentage methylation data. #
 # Print and clear %outhash for each chromosome, taking into account the #
 # thresholds set by the user.                                           #
 #########################################################################
@@ -132,11 +134,15 @@ print OUT "\n";
 # Run process and print for each chromosome
 foreach my $chr (sort keys %bed_array){
 	print "Loading $chr\n";
+	# Initialize temporary hash for storing output information
+	# Structure:
+	# $outhash{chromosome}{start}{end}{filename} = ",percentmethylation"
 	my %outhash;
 	# For each sample/folder, run the chromosome bed file
 	for(my $i = 0; $i < @filenames; $i++){
 		my $filename = $filenames[$i] . $chr . ".bed";	# Create File Name
 		my $bedpositioncounter = 0;	# Starting position for each iteration
+						# Increments when previous bed array lines are no longer necessary to scan
 		
 		open (IN, "<$filename") or die "$0: Error: Couldn't open chromosome file $filename\n";
 		my $inline = <IN>;  	# Check for header line
@@ -144,14 +150,17 @@ foreach my $chr (sort keys %bed_array){
 			my @inlinearray = split("\t",$inline);
 			# Check the bed array for methylation information
 			for(my $k = $bedpositioncounter; $k < $bed_array{$chr}[0][2]; $k++){
+				# Case 1: CpG Site is before bed array region
 				# If end of in line is less than start of bed line, go to next in line
 				if($inlinearray[2] < $bed_array{$chr}[$k][0]){last;}
+				# Case 2: CpG Site is after bed array region
 				# If end of bed line is less than start of in line, go to next bed line
 				# Increment starting position, previous lines no longer necessary for further in lines
 				if($bed_array{$chr}[$k][1] < $inlinearray[1]){
 					$bedpositioncounter++;
 					next;
 				}
+				# Case 3: CpG Site is within bed array region
 				# If in line position lies within bed line position, add methylation information if sufficient
 				if($inlinearray[1] >= $bed_array{$chr}[$k][0] && $inlinearray[2] <= $bed_array{$chr}[$k][1]){
 					my @CpGmethylation = split("-", $inlinearray[3]);
@@ -168,14 +177,17 @@ foreach my $chr (sort keys %bed_array){
 			my @inlinearray = split("\t",$_);
 			# Check the bed array for methylation information
 			for(my $k = $bedpositioncounter; $k < $bed_array{$chr}[0][2]; $k++){
-				# If end of inline is less than start of bed line, go to next inline
+				# Case 1: CpG Site is before bed array region
+				# If end of in line is less than start of bed line, go to next in line
 				if($inlinearray[2] < $bed_array{$chr}[$k][0]){last;}
+				# Case 2: CpG Site is after bed array region
 				# If end of bed line is less than start of in line, go to next bed line
 				# Increment starting position, previous lines no longer necessary for further in lines
 				if($bed_array{$chr}[$k][1] < $inlinearray[1]){
 					$bedpositioncounter++;
 					next;
 				}
+				# Case 3: CpG Site is within bed array region
 				# If in line position lies within bed line position, add methylation information if sufficient
 				if($inlinearray[1] >= $bed_array{$chr}[$k][0] && $inlinearray[2] <= $bed_array{$chr}[$k][1]){
 					my @CpGmethylation = split("-", $inlinearray[3]);
