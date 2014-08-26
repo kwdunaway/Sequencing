@@ -92,6 +92,7 @@ while(<BED>)
 		print "Warning: duplicate found, skipping: $_\n";
 	}
 }
+close BED;
 
 # Fill in array with hash information, this is done to sort the information
 foreach my $chr (keys %bed_hash){
@@ -108,7 +109,6 @@ foreach my $chr (keys %bed_hash){
 }
 %bed_hash = (); # Empty the hash
 
-close BED;
 print "Finished loading input BED file.\n\n";
 
 #########################################################################
@@ -136,28 +136,28 @@ foreach my $chr (sort keys %bed_array){
 	# For each sample/folder, run the chromosome bed file
 	for(my $i = 0; $i < @filenames; $i++){
 		my $filename = $filenames[$i] . $chr . ".bed";	# Create File Name
-		my $arraycount = 0;	# Starting position for each iteration
+		my $bedpositioncounter = 0;	# Starting position for each iteration
 		
-		open (IN, "<$filename") or die "AvgMethv4.pl: Error: Couldn't open chromosome file $filename\n";
+		open (IN, "<$filename") or die "$0: Error: Couldn't open chromosome file $filename\n";
 		my $inline = <IN>;  	# Check for header line
 		if($inline =~ /^chr/){	# Process line if data
 			my @inlinearray = split("\t",$inline);
 			# Check the bed array for methylation information
-			for(my $k = $arraycount; $k < $bed_array{$chr}[0][2]; $k++){
+			for(my $k = $bedpositioncounter; $k < $bed_array{$chr}[0][2]; $k++){
 				# If end of in line is less than start of bed line, go to next in line
 				if($inlinearray[2] < $bed_array{$chr}[$k][0]){last;}
 				# If end of bed line is less than start of in line, go to next bed line
 				# Increment starting position, previous lines no longer necessary for further in lines
 				if($bed_array{$chr}[$k][1] < $inlinearray[1]){
-					$arraycount++;
+					$bedpositioncounter++;
 					next;
 				}
 				# If in line position lies within bed line position, add methylation information if sufficient
 				if($inlinearray[1] >= $bed_array{$chr}[$k][0] && $inlinearray[2] <= $bed_array{$chr}[$k][1]){
-					my @dash = split("-", $inlinearray[3]);
+					my @CpGmethylation = split("-", $inlinearray[3]);
 					# Check if above read threshold
-					if ($dash[1] >= $minreads) {
-						$outhash{$chr}{$bed_array{$chr}[$k][0]}{$bed_array{$chr}[$k][1]}{$filenames[$i]} .= ",$dash[0]";
+					if ($CpGmethylation[1] >= $minreads) {
+						$outhash{$chr}{$bed_array{$chr}[$k][0]}{$bed_array{$chr}[$k][1]}{$filenames[$i]} .= ",$CpGmethylation[0]";
 					}
 				}
 				
@@ -167,26 +167,26 @@ foreach my $chr (sort keys %bed_array){
 		while(<IN>){
 			my @inlinearray = split("\t",$_);
 			# Check the bed array for methylation information
-			for(my $k = $arraycount; $k < $bed_array{$chr}[0][2]; $k++){
+			for(my $k = $bedpositioncounter; $k < $bed_array{$chr}[0][2]; $k++){
 				# If end of inline is less than start of bed line, go to next inline
 				if($inlinearray[2] < $bed_array{$chr}[$k][0]){last;}
 				# If end of bed line is less than start of in line, go to next bed line
 				# Increment starting position, previous lines no longer necessary for further in lines
 				if($bed_array{$chr}[$k][1] < $inlinearray[1]){
-					$arraycount++;
+					$bedpositioncounter++;
 					next;
 				}
 				# If in line position lies within bed line position, add methylation information if sufficient
 				if($inlinearray[1] >= $bed_array{$chr}[$k][0] && $inlinearray[2] <= $bed_array{$chr}[$k][1]){
-					my @dash = split("-", $inlinearray[3]);
+					my @CpGmethylation = split("-", $inlinearray[3]);
 					# Check if above read threshold
-					if ($dash[1] >= $minreads) {
-						$outhash{$chr}{$bed_array{$chr}[$k][0]}{$bed_array{$chr}[$k][1]}{$filenames[$i]} .= ",$dash[0]";
+					if ($CpGmethylation[1] >= $minreads) {
+						$outhash{$chr}{$bed_array{$chr}[$k][0]}{$bed_array{$chr}[$k][1]}{$filenames[$i]} .= ",$CpGmethylation[0]";
 					}
 				}
 			}
 		}
-		close BED;
+		close IN;
 
 		# Check the entire data set for positions with no methylation information and fill in with "NA"
 		for(my $k = 0; $k < $bed_array{$chr}[0][2]; $k++){
@@ -198,49 +198,44 @@ foreach my $chr (sort keys %bed_array){
 
 	print "Printing $chr\n";
 	# Print data for this chromosome
-	foreach my $outchr (keys %outhash){
-		foreach my $outstart (sort {$a<=>$b} keys %{$outhash{$outchr}}){
-			foreach my $outend (sort {$a<=>$b} keys %{$outhash{$outchr}{$outstart}}){
-				# Make a count for file threshold
-				my $maxNA = @filenames - $minfiles;
-				for(my $i = 0; $i < @filenames; $i++) {
-					# For each file missing data, increment count
-					if($outhash{$outchr}{$outstart}{$outend}{$filenames[$i]} eq "NA") {
-						$maxNA--;
+	foreach my $outstart (sort {$a<=>$b} keys %{$outhash{$chr}}){
+		foreach my $outend (sort {$a<=>$b} keys %{$outhash{$chr}{$outstart}}){
+			# Make a count for file threshold
+			my $NAcounter = 0;
+			for(my $i = 0; $i < @filenames; $i++) {
+				# For each file missing data, increment count
+				if($outhash{$chr}{$outstart}{$outend}{$filenames[$i]} eq "NA") {
+					$NAcounter++;
+				}
+				# Files with data, process percentage methylation
+				else {
+					my @data = split(",",$outhash{$chr}{$outstart}{$outend}{$filenames[$i]});
+					# Check CpG site threshold
+					if ($#data >= $mincpg){
+						# Calculate percentage methylation
+						my $sum = 0;
+						foreach my $methyl (@data){
+							if($methyl ne "") {$sum += $methyl;}
+						}
+						$outhash{$chr}{$outstart}{$outend}{$filenames[$i]} = sprintf("%.3f", $sum/$#data);
 					}
-					# Files with data, process percentage methylation
+					# Does not pass threshold, add to missing data
 					else {
-						my @data = split(",",$outhash{$outchr}{$outstart}{$outend}{$filenames[$i]});
-						# Check CpG site threshold
-						if ($#data >= $mincpg){
-							# Calculate percentage methylation
-							my $sum = 0;
-							foreach my $methyl (@data){
-								if($methyl ne "") {$sum += $methyl;}
-							}
-							$outhash{$outchr}{$outstart}{$outend}{$filenames[$i]} = sprintf("%.5f", $sum/$#data);
-						}
-						# Does not pass threshold, add to missing data
-						else {
-							$outhash{$outchr}{$outstart}{$outend}{$filenames[$i]} = "NA";
-							$maxNA--;
-						}
+						$outhash{$chr}{$outstart}{$outend}{$filenames[$i]} = "NA";
+						$NAcounter++;
 					}
 				}
-				# Check file threshold, if met, then print
-				if($maxNA >= 0) {
-					# Print to out
-					print OUT"$outchr\t$outstart\t$outend";
-					for(my $i = 0; $i < @filenames; $i++) {
-						print OUT "\t$outhash{$outchr}{$outstart}{$outend}{$filenames[$i]}";
-					}
-					print OUT "\n";
+			}
+			# Check file threshold, if met, then print
+			if($NAcounter <= @filenames - $minfiles) {
+				# Print to out
+				print OUT"$chr\t$outstart\t$outend";
+				for(my $i = 0; $i < @filenames; $i++) {
+					print OUT "\t$outhash{$chr}{$outstart}{$outend}{$filenames[$i]}";
 				}
+				print OUT "\n";
 			}
 		}
 	}
-
-
 }
-
 close OUT;

@@ -6,9 +6,10 @@ use strict; use warnings;
 # Email: kwdunaway@ucdavis.edu rgchu@ucdavis.edu
 # Date: 8-12-2014
 #
-# This script calculates average percent methylation of all CpG sites in each 
-# read of a BED file. Multiple percent methylation folders with bed files of
-# each chromosome may be entered as inputs to compared side by side.
+# This script calculates average percent methylation of all CpG sites within each 
+# line of a BED file. Multiple percent methylation folders with Percent Methylation
+# bed files of each chromosome may be entered as inputs to be compared side by side.
+#
 # The user can set thresholds for each read. The minimum CpG site threshold 
 # will place an "NA" for the read for that experiment if the specified amount
 # of CpG sites found in that read is not met. The minimum read threshold will
@@ -16,10 +17,7 @@ use strict; use warnings;
 # threshold. The minimum file threshold is useful when multiple folders are
 # input and requires percent methylatiion data (not "NA") for a read from 
 # at least the specified number of folders. If the file threshold is not met,
-# the read is not printed to output.
-#
-# Arguments:
-#    <see below>
+# the bed line is not printed to the output.
 #
 ##########################################################################################
 
@@ -67,11 +65,10 @@ else { # If first line IS a header line
 }
 
 # Process entire BED file
-while(<IN>)
-{ 
+while(<IN>) { 
 	chomp;
 	my @line = split("\t",$_);
-	if ($line[0] =~ /_/){next;}
+	if ($line[0] =~ /_/) {next;}
 	$chrarray{$line[0]}[0][0]++;	# Number of lines in this chromosome
 	$chrarray{$line[0]}[$chrarray{$line[0]}[0][0]][0] = $line[0];	# Chromosome
 	$chrarray{$line[0]}[$chrarray{$line[0]}[0][0]][1] = $line[1];	# Start
@@ -88,7 +85,7 @@ print "past loading CpG islands\n";
 foreach my $key (sort keys %chrarray)
 {
 	my @outputtable;# Stores temporary output and prints at each iteration
-	my $count = 1;	# line count
+#	my $count = 1;	# line count
 	$outputtable[$count][0][2] = 0;		# Initialize number of CpG sites
 	print "Loading $key...\n";
 	for(my $i = 0; $i < $#ARGV+1; $i++)	# Run chromosome for each folder {
@@ -208,6 +205,3 @@ foreach my $key (sort keys %chrarray)
 }
 
 close OUT;
-
-__END__
-
