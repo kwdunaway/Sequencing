@@ -48,7 +48,7 @@ my $mincpg = shift(@ARGV);	# Avg % Meth = "NA" unless >= minimum CpG site thresh
 my $minreads = shift(@ARGV);	# Threshold for reads found at a CpG site
 my $minfiles = shift(@ARGV);	# Threshold for total data across all folders
 my @filenames;			# Input Percent Methylation Folder Prefix (Ex: /home/user/Permeth/Permeth_)
-my @headernames;		# Input Percent Methylation Header for Column (Ex: Sample 1)
+my @headernames;		# Input Percent Methylation Header for Column (Ex: Sample1)
 while(@ARGV){
 	push(@filenames,shift(@ARGV));
 	push(@headernames,shift(@ARGV));
@@ -58,12 +58,13 @@ while(@ARGV){
 my %bed_hash;	# Stores every field of lines in BED File and percentage methylation
 my %bed_array;	# Array version of the hash
 
-#########################################################################
-#                       Reading Input BED File                          #
-# Inputs all of the data in the BED file into a hash and then an array  #
-# The array will then by filled into an output hash with percentage     #
-# methylation information from the input files.                         #
-#########################################################################
+##########################################################################
+#                       Reading Input BED File                           #
+# First, the BED file is loaded onto a hash by first checking for        #
+# a header and then splitting every line by chromosome, start, and stop. #
+# The hash is then sorted into an array to be used in later steps for    #
+# faster data comparison.                                                #
+##########################################################################
 
 my $firstline = <BED>;		# Check for header
 if ($firstline =~ /^chr/){	# Checks to see if the first line is not a header
@@ -94,13 +95,11 @@ while(<BED>)
 
 # Fill in array with hash information, this is done to sort the information
 foreach my $chr (keys %bed_hash){
+	# Initialize line count
+	$bed_array{$chr}[0][2]=0;
 	# For each position, sort numerically
 	foreach my $start (sort {$a<=>$b} keys %{$bed_hash{$chr}}){
 		foreach my $end (sort {$a<=>$b} keys %{$bed_hash{$chr}{$start}}){
-			# If uninitialized, initialize
-			if(!defined $bed_array{$chr}[0][2]){		
-				$bed_array{$chr}[0][2]=0;	# Line Count
-			}
 			$bed_array{$chr}[$bed_array{$chr}[0][2]][0] = $start;	# Start
 			$bed_array{$chr}[$bed_array{$chr}[0][2]][1] = $end;	# End
 			$bed_array{$chr}[0][2]++;
@@ -113,11 +112,14 @@ close BED;
 print "Finished loading input BED file.\n\n";
 
 #########################################################################
-#                       Reading Input Folders                           #
-# Run every folder and fill in %outhash with information from the bed   #
-# file using the %bed_array: (1) chromosome (2) start (3) end &         #
-# information from the input file: (4) header name (5) percentage       #
-# methylation data. Print and clear %outhash for each chromosome.       #
+#                         Reading Input Folders                         #
+# For each chromosome found in the array, search for data files for the #
+# chromosome in each folder. Load the chromosome input file from each   #
+# folder and fill in %outhash with information from the bed file using  #
+# the %bed_array: (1) chromosome (2) start (3) end & information from   #
+# the input file: (4) header name (5) percentage methylation data.      #
+# Print and clear %outhash for each chromosome, taking into account the #
+# thresholds set by the user.                                           #
 #########################################################################
 
 # Print header
@@ -197,8 +199,8 @@ foreach my $chr (sort keys %bed_array){
 	print "Printing $chr\n";
 	# Print data for this chromosome
 	foreach my $outchr (keys %outhash){
-		foreach my $outstart (keys %{$outhash{$outchr}}){
-			foreach my $outend (keys %{$outhash{$outchr}{$outstart}}){
+		foreach my $outstart (sort {$a<=>$b} keys %{$outhash{$outchr}}){
+			foreach my $outend (sort {$a<=>$b} keys %{$outhash{$outchr}{$outstart}}){
 				# Make a count for file threshold
 				my $maxNA = @filenames - $minfiles;
 				for(my $i = 0; $i < @filenames; $i++) {
