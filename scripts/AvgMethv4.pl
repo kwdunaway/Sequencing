@@ -133,7 +133,7 @@ print OUT "\n";
 
 # Run process and print for each chromosome
 foreach my $chr (sort keys %bed_array){
-	print "Loading $chr\n";
+	print "\nLoading $chr\n";
 	# Initialize temporary hash for storing output information
 	# Structure:
 	# $outhash{chromosome}{start}{end}{filename} = ",percentmethylation"
@@ -145,6 +145,7 @@ foreach my $chr (sort keys %bed_array){
 						# Increments when previous bed array lines are no longer necessary to scan
 		
 		open (IN, "<$filename") or die "$0: Error: Couldn't open chromosome file $filename\n";
+		print "Analyzing $filename\n";
 		my $inline = <IN>;  	# Check for header line
 		if($inline =~ /^chr/){	# Process line if data
 			my @inlinearray = split("\t",$inline);
