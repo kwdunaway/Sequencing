@@ -4,14 +4,9 @@ use strict; use warnings;
 ##########################################################################################
 # Author: Keith Dunaway
 # Email: kwdunaway@ucdavis.edu
-# Script Name: 
-# Version: 0.1
 # Last Updated: 
 #
 # <brief description of script's function>
-#
-# Arguments:
-#   <see below>
 #
 ##########################################################################################
 
@@ -21,7 +16,7 @@ use strict; use warnings;
 # Command Line Error Checking. Global Variables and I/O Initiation #
 ####################################################################
 
-die "This script needs the following arguments:
+die "$0 needs the following arguments:
     1) 
     2) 
     3) 
@@ -29,8 +24,8 @@ die "This script needs the following arguments:
 
 my $infile = shift(@ARGV);
 open(IN, "<$infile") or die "cannot open $infile infile";
-my $output_filename = shift(@ARGV);
-open(OUT, ">$output_filename") or die "cannot open $output_filename outfile";
+my $outfile = shift(@ARGV);
+open(OUT, ">$outfile") or die "cannot open $outfile outfile";
 
 
 ###################
@@ -43,5 +38,3 @@ while (<IN>)
     my @line = split ("\t", $_);
 }
 
-# 2D arrays
-@{$OutputArray[$linenum]} = @line;
