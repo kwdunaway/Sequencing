@@ -21,7 +21,7 @@ die "$0 needs the following arguments:
     2) Output file name
     3) column
     4) substring number (ex: 5 is first 5 chars, ex2: -10 is last 10 chars)
-" unless @ARGV == 3;
+" unless @ARGV == 4;
 
 my $infile = shift(@ARGV);
 open(IN, "<$infile") or die "cannot open $infile infile";
