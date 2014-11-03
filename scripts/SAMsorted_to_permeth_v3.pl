@@ -82,6 +82,8 @@ if ($meth_type eq "CG") # Run this process if CG
 	print "Scanning for 'CG'\n";
 	while(<IN>){
 		my @line = split("\t", $_);
+		
+		if ($line[0] =~ /@/) {next;}
 		my $chrom = $line[$chrc];
 	
 		#takes out weird chromosomes like chr#_random and ect.

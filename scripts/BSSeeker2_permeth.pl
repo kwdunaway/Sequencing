@@ -61,6 +61,7 @@ my $strandc = 11;
 
 while(<IN>){
 	my @line = split("\t", $_);
+	if ($line[0] =~ /@/) {next;}
 	my $chrom = $line[$chrc];
 	if ($chrom =~ /_/) {next;}
 	my $start = $line[$startc];

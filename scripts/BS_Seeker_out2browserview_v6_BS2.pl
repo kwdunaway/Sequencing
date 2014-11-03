@@ -31,7 +31,7 @@ die "This script needs the following arguments:
     1) Aligned BSOUT file
     2) Sorted output folder
     3) Permeth output folder
-    4) genome (hg18, hg19, or mm9)
+    4) genome (hg18, hg19, rn4, or mm9)
     5) zipoutput? (Y or N)
 " unless @ARGV == 5;
 
@@ -95,7 +95,7 @@ elsif($genome eq "mm9"){
 	           '0022' => "chrY",
 	           '0020' => "chrM",);
 }
-if($genome eq "hg19"){
+elsif($genome eq "hg19"){
 	%Chroms = ('chr1' => "chr1",
 	           'chr2' => "chr2",
 	           'chr3' => "chr3",
@@ -122,7 +122,32 @@ if($genome eq "hg19"){
 	           'chrY' => "chrY",
 	           'chrM' => "chrM",);
 }
-else{die "$genome is not hg18 or mm9";}
+elsif($genome eq "rn4"){
+	%Chroms = ('chr1' => "chr1",
+	           'chr2' => "chr2",
+	           'chr3' => "chr3",
+	           'chr4' => "chr4",
+	           'chr5' => "chr5",
+	           'chr6' => "chr6",
+	           'chr7' => "chr7",
+	           'chr8' => "chr8",
+	           'chr9' => "chr9",
+	           'chr10' => "chr10",
+	           'chr11' => "chr11",
+	           'chr12' => "chr12",
+	           'chr13' => "chr13",
+	           'chr14' => "chr14",
+	           'chr15' => "chr15",
+	           'chr16' => "chr16",
+	           'chr17' => "chr17",
+	           'chr18' => "chr18",
+	           'chr19' => "chr19",
+	           'chr20' => "chr20",
+	           'chrX' => "chrX",
+	           'chrY' => "chrY",
+	           'chrM' => "chrM",);
+}
+else{die "$genome is not hg18, hg19, rn4, or mm9";}
 
 ################
 # Main Section #
