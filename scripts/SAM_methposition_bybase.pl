@@ -72,7 +72,8 @@ for(my $p = 0; $p < @Samples; $p++){
 		my @line = split("\t",$_);
 		if(defined($line[14])){} else{next;}
 		my $methstring = substr($line[14],5);
-		
+
+		$methstring = reverse($methstring);		
 #		my $source = "up";
 #		if(length($methstring) <= 60){$source = "down";}
 
