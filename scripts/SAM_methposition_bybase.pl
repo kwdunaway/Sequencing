@@ -34,6 +34,8 @@ print OUT "Position";
 #print OUT60 "Position";
 my %Methylation;
 my %UnMethylation;
+my %RevMethylation;
+my %RevUnMethylation;
 my @inputsam;
 my @Samples;
 while(@ARGV){
