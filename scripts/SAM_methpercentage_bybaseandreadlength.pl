@@ -33,6 +33,7 @@ my $cgoutput = $output . "_cgcontent.txt";
 open(CG, ">$cgoutput") or die "$0 cannot open $cgoutput OUT outfile";
 print CG "ReadLengths";
 my %Methylation;        # Hash to hold methylation information
+my %CGcontent;		# Hash to hold CG content of reads
 my @inputsam;           # Input SAM Files
 my @Samples;            # Input Sample Names
 while(@ARGV){           # Take in the inputs
@@ -59,6 +60,7 @@ for(my $p = 0; $p < @Samples; $p++){    # Loop through samples
 		my @line = split("\t",$_);
 		if($linecount % 100000 == 0) {print "At line $linecount...\n";}
 		if(defined($line[14])){} else{next;} # Skip if no data
+		my $cgprocessflag = 0; # Run CG process only once
 		# OUT process, methylation data
 		my $methstring = substr($line[14],5);
 
@@ -77,6 +79,22 @@ for(my $p = 0; $p < @Samples; $p++){    # Loop through samples
 			$Methylation{$base+1}{$SampleName}{$readlength}[0]++;
 			$offset = $base + 1; # Increment position in string
 			$base = index($string, $char, $offset); # Find next 'X'
+
+			if($cgprocessflag == 0){
+				#CG process, CG content data
+				my $cgstring = substr($line[15],8,-3);
+				my @num = ($cgstring =~ /[CG]/g); # Scan CGs
+				my $count = @num;
+
+				if(!defined $CGcontent{$SampleName}{$readlength}[0]) {
+					$CGcontent{$SampleName}{$readlength}[0] = 0;
+					$CGcontent{$SampleName}{$readlength}[1] = 0;
+				}
+				# Place CG count and total count into hash
+				$CGcontent{$SampleName}{$readlength}[0]+=$count;
+				$CGcontent{$SampleName}{$readlength}[1]+=$readlength;
+				$cgprocessflag = 1; # Do not run process again for this read
+			}
 		}
 		$string = $methstring;
 		$char = 'x'; # Unmethylated
@@ -91,14 +109,23 @@ for(my $p = 0; $p < @Samples; $p++){    # Loop through samples
 			$Methylation{$base+1}{$SampleName}{$readlength}[1]++;
 			$offset = $base + 1; # Increment position in string
 			$base = index($string, $char, $offset); # Find next 'x'
+
+			if($cgprocessflag == 0){
+				#CG process, CG content data
+				my $cgstring = substr($line[15],8,-3);
+				my @num = ($cgstring =~ /[CG]/g); # Scan CGs
+				my $count = @num;
+
+				if(!defined $CGcontent{$SampleName}{$readlength}[0]) {
+					$CGcontent{$SampleName}{$readlength}[0] = 0;
+					$CGcontent{$SampleName}{$readlength}[1] = 0;
+				}
+				# Place CG count and total count into hash
+				$CGcontent{$SampleName}{$readlength}[0]+=$count;
+				$CGcontent{$SampleName}{$readlength}[1]+=$readlength;
+				$cgprocessflag = 1; # Do not run process again for this read
+			}
 		}
-
-		#CG process, CG content data
-		my $cgstring = substr($line[15],8);
-		my @num = ($line[15] =~ /[CG]/g);
-		my $count = @num;
-
-
 		$linecount++;
 	}
 	close SAM;
@@ -125,18 +152,25 @@ foreach my $base (sort {$a<=>$b} keys %Methylation){
 
 # Column headers
 # p for methylation percentage (meth/total cpg sites), c for total count of cpg sites
+# Also print CG content to CG output file
 foreach my $SampleName (keys %SampleOutput){ 
 	foreach my $readlength (sort {$a<=>$b} keys %{$SampleOutput{$SampleName}}){
 		print OUT $SampleOutput{$SampleName}{$readlength}, "_p";
+		print CG $SampleOutput{$SampleName}{$readlength};
 	}
 }
+print CG "\nCG Percentage";
 
 foreach my $SampleName (keys %SampleOutput){ 
 	foreach my $readlength (sort {$a<=>$b} keys %{$SampleOutput{$SampleName}}){
 		print OUT $SampleOutput{$SampleName}{$readlength}, "_c";
+		# Calculate CG percentage
+		my $cgpercentage = $CGcontent{$SampleName}{$readlength}[0]/$CGcontent{$SampleName}{$readlength}[1];
+		print CG "\t", $cgpercentage;
 	}
 }
 print OUT "\n";
+close CG;
 
 # Print data, each base position at a time for all the samples
 foreach my $base (sort {$a<=>$b} keys %Methylation){
