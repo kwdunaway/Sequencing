@@ -4,15 +4,12 @@ use strict; use warnings;
 ##########################################################################################
 # Author: Keith Dunaway
 # Email: kwdunaway@ucdavis.edu
-# Script Name: HMMPipeline_v1.pl
-# Version: 1.1
-# Last Updated: 5/28/2014
+# Script Name: HMMPipeline.pl
+# Version: 1.4
+# Last Updated: 12/28/2014
 #
 # This is a wrapper that puts has minimal input and automates output. It is NOT
 #   memory efficient.
-#
-# Arguments:
-#   <see below>
 #
 ##########################################################################################
 
@@ -27,13 +24,15 @@ my $BED_to_Korf_path = "/data/scratch/programs/Methylation_Domain_Pipeline/Examp
 my $RunMethylationDomainPipeline_path = "/data/scratch/programs/Methylation_Domain_Pipeline/Example_Run_Folder/RunMethylationDomainPipeline.pl";
 my $hg18fastapath = "/data/scratch/genomes/hg18/chrom_fasta/";
 my $hg19fastapath = "/data/scratch/genomes/hg19/chrom_fasta/";
+my $hg38fastapath = "/data/scratch/genomes/hg38/chrom_fasta/";
 my $rn4fastapath = "/data/scratch/genomes/rn4/chrom_fasta/";
+my $rn6fastapath = "/data/scratch/genomes/rn6/chrom_fasta/";
 
 # I/O check
 die "This script needs the following arguments:
     1) Permeth bed files prefix (leave off chr##.bed)
     2) Experiment Name (prefix for all outfiles)
-    3) genome (hg18, hg19, or rn4)
+    3) genome (hg18, hg19, hg38, rn6, or rn4)
     4) HMM model name (ex: Placenta_30_upd.hmm)
 " unless @ARGV == 4;
 
@@ -75,7 +74,7 @@ if($genome eq "hg18"){
                    "chrX" => '154913754',
                    "chrY" => '57772954',);
 }
-if($genome eq "hg19"){
+elsif($genome eq "hg19"){
 		$GenomeFASTApath = $hg19fastapath;
 		$CPGIslandsbed = "hg19_genome_CGI.bed";
         %Chroms = ("chr1" => '249250621',
@@ -103,6 +102,35 @@ if($genome eq "hg19"){
                    "chrX" => '155270560',
                    "chrY" => '59373566',);
 }
+elsif($genome eq "hg38"){
+		$GenomeFASTApath = $hg38fastapath;
+		$CPGIslandsbed = "hg38_genome_CGI.bed";
+        %Chroms = ("chr1" => '248956422',
+                   "chr2" => '242193529',
+                   "chr3" => '198295559',
+                   "chr4" => '190214555',
+                   "chr5" => '181538259',
+                   "chr6" => '170805979',
+                   "chr7" => '159345973',
+                   "chr8" => '145138636',
+                   "chr9" => '138394717',
+                   "chr10" => '133797422',
+                   "chr11" => '135086622',
+                   "chr12" => '133275309',
+                   "chr13" => '114364328',
+                   "chr14" => '107043718',
+                   "chr15" => '101991189',
+                   "chr16" => '90338345',
+                   "chr17" => '83257441',
+                   "chr18" => '80373285',
+                   "chr19" => '58617616',
+                   "chr20" => '64444167',
+                   "chr21" => '46709983',
+                   "chr22" => '50818468',
+                   "chrM" => '16569',
+                   "chrX" => '156040895',
+                   "chrY" => '57227415',);
+}
 elsif($genome eq "rn4"){
 		$GenomeFASTApath = $rn4fastapath;
 		$CPGIslandsbed = "rn4_genome_CGI.bed";
@@ -127,7 +155,32 @@ elsif($genome eq "rn4"){
                    "chr19" => '59218465',
                    "chrX" => '160699376',);
 }
-else{die "$genome is not hg18 or rn4";}
+elsif($genome eq "rn6"){
+		$GenomeFASTApath = $rn6fastapath;
+		$CPGIslandsbed = "rn6_genome_CGI.bed";
+        %Chroms = ("chr1" => '282763074',
+                   "chr2" => '266435125',
+                   "chr3" => '177699992',
+                   "chr4" => '184226339',
+                   "chr5" => '173707219',
+                   "chr6" => '147991367',
+                   "chr7" => '145729302',
+                   "chr8" => '133307652',
+                   "chr9" => '122095297',
+                   "chr10" => '112626471',
+                   "chr11" => '90463843',
+                   "chr12" => '52716770',
+                   "chr13" => '114033958',
+                   "chr14" => '115493446',
+                   "chr15" => '111246239',
+                   "chr16" => '90668790',
+                   "chr17" => '90843779',
+                   "chr18" => '88201929',
+                   "chr19" => '62275575',
+                   "chr20" => '56205956',
+                   "chrX" => '159970021',);
+}
+else{die "$genome is not hg18, hg19, hg38, rn6, or rn4";}
 
 ################
 # Main Section #
@@ -158,3 +211,12 @@ print $commandline , "\n";
 $commandline = "mv PARTIAL_Final.bed PMD_" . $experimentname . ".bed";
 print $commandline , "\n";
 `$commandline`;
+
+$commandline = "perl /data/scratch/programs/perl_script/change_singlebedhead.pl PMD_" . $experimentname . ".bed PMD_" . $experimentname;
+print $commandline , "\n";
+`$commandline`;
+$commandline = "perl /data/scratch/programs/perl_script/change_singlebedhead.pl HMD_" . $experimentname . ".bed HMD_" . $experimentname;
+print $commandline , "\n";
+`$commandline`;
+
+

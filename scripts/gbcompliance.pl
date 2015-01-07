@@ -4,15 +4,13 @@ use strict; use warnings;
 ##########################################################################################
 # Author: Roy Chu and Keith Dunaway
 # Email: rgchu@ucdavis.edu
-# Date: 8-4-2014
+# Date: 12-12-2014
 # Script Name: gbcompliance.pl
 #
 # This script deals with certain genome browser errors, allowing replacement of 
 # the header and gets rid of positions past the reference chromosomes.
 #
 # Arguments:
-#    <see below>
-#
 ##########################################################################################
 
 
@@ -22,7 +20,7 @@ use strict; use warnings;
 ####################################################################
 
 die "usage: gbcompliance.pl
-    1) Database (hg19, hg18, rn4)
+    1) Database (hg19, hg18, hg38, rn4, rn6)
     2) Input Prefix (Include full path)
     3) Output Prefix (Include full path)
     4) Track Name Prefix
@@ -85,6 +83,33 @@ elsif($genome eq "hg19"){
                    "chrX" => '155270560',
                    "chrY" => '59373566',);
 }
+elsif($genome eq "hg38"){
+        %Chroms = ("chr1" => '248956422',
+                   "chr2" => '242193529',
+                   "chr3" => '198295559',
+                   "chr4" => '190214555',
+                   "chr5" => '181538259',
+                   "chr6" => '170805979',
+                   "chr7" => '159345973',
+                   "chr8" => '145138636',
+                   "chr9" => '138394717',
+                   "chr10" => '133797422',
+                   "chr11" => '135086622',
+                   "chr12" => '133275309',
+                   "chr13" => '114364328',
+                   "chr14" => '107043718',
+                   "chr15" => '101991189',
+                   "chr16" => '90338345',
+                   "chr17" => '83257441',
+                   "chr18" => '80373285',
+                   "chr19" => '58617616',
+                   "chr20" => '64444167',
+                   "chr21" => '46709983',
+                   "chr22" => '50818468',
+                   "chrM" => '16569',
+                   "chrX" => '156040895',
+                   "chrY" => '57227415',);
+}
 elsif($genome eq "rn4"){
         %Chroms = ("chr1" => '267910886',
                    "chr2" => '258207540',
@@ -107,7 +132,30 @@ elsif($genome eq "rn4"){
                    "chr19" => '59218465',
                    "chrX" => '160699376',);
 }
-else{die "$genome is not one of the following genomes: {hg18, hg19, rn4}";}
+elsif($genome eq "rn6"){
+ 		%Chroms = ("chr1" => '282763074',
+                   "chr2" => '266435125',
+                   "chr3" => '177699992',
+                   "chr4" => '184226339',
+                   "chr5" => '173707219',
+                   "chr6" => '147991367',
+                   "chr7" => '145729302',
+                   "chr8" => '133307652',
+                   "chr9" => '122095297',
+                   "chr10" => '112626471',
+                   "chr11" => '90463843',
+                   "chr12" => '52716770',
+                   "chr13" => '114033958',
+                   "chr14" => '115493446',
+                   "chr15" => '111246239',
+                   "chr16" => '90668790',
+                   "chr17" => '90843779',
+                   "chr18" => '88201929',
+                   "chr19" => '62275575',
+                   "chr20" => '56205956',
+                   "chrX" => '159970021',);
+}
+else{die "$genome is not one of the following genomes: {hg18, hg19, hg38, rn4, rn6}";}
 
 my $inputprefix = shift(@ARGV);	
 my $outputprefix = shift(@ARGV);
@@ -150,7 +198,3 @@ foreach my $chr (sort keys %Chroms)
 		}
 	}
 }
-
-
-
-

@@ -5,17 +5,15 @@ use strict; use warnings;
 # Author: Keith Dunaway
 # Email: kwdunaway@ucdavis.edu
 # Version: 4.0
-# Last Updated: July 18, 2014
+# Last Updated: 1-6-2015
 #
 # This script looks through all raw fastq sequencing reads and finds the reads that
-# have the Line1 pattern.  Then, it puts those reads in a separate file.  Also, the
-# script quantifies methylation of these sequences across three potential 
+# have the Line1 pattern.  Then, it can put those reads in a separate file.  Also, the
+# script quantifies methylation of these sequences across four potential 
 # methylation sites.
 #
-# Arguments:
-#   <see below>
 # To call:
-#   perl /data/scratch/programs/perl_script/Line1_analysisv2.pl Stats_L1v2.txt Sample_JLD018/JLD018_filtered.fq_LINE1reads.fq Sample_JLDS019/JLD019_filtered.fq_LINE1reads.fq Sample_JLKD006/JLKD_006_filtered.fq_LINE1reads.fq Sample_JLD017/JLD017_filtered.fq_LINE1reads.fq Sample_JLKD008/JLKD008_filtered.fq_LINE1reads.fq Sample_JLKD007/JLKD007_filtered.fq_LINE1reads.fq Sample_JLKD002/JLKD002_filtered.fq_LINE1reads.fq Sample_JLKD003/JLKD003_filtered.fq_LINE1reads.fq Sample_JLKD005/JLKD_005_filtered.fq_LINE1reads.fq Sample_JLKD001/JLKD001_filtered.fq_LINE1reads.fq Sample_JLKD004/JLKD_004_filtered.fq_LINE1reads.fq
+#   perl /data/scratch/programs/perl_script/Line1_analysisv2.pl YES Stats_L1v2.txt Sample_JLD018/JLD018_filtered.fq_LINE1reads.fq Sample_JLDS019/JLD019_filtered.fq_LINE1reads.fq Sample_JLKD006/JLKD_006_filtered.fq_LINE1reads.fq Sample_JLD017/JLD017_filtered.fq_LINE1reads.fq Sample_JLKD008/JLKD008_filtered.fq_LINE1reads.fq Sample_JLKD007/JLKD007_filtered.fq_LINE1reads.fq Sample_JLKD002/JLKD002_filtered.fq_LINE1reads.fq Sample_JLKD003/JLKD003_filtered.fq_LINE1reads.fq Sample_JLKD005/JLKD_005_filtered.fq_LINE1reads.fq Sample_JLKD001/JLKD001_filtered.fq_LINE1reads.fq Sample_JLKD004/JLKD_004_filtered.fq_LINE1reads.fq
 #
 ##########################################################################################
 
@@ -26,25 +24,19 @@ use strict; use warnings;
 ####################################################################
 
 die "$0 needs the following arguments:
-	1) Filter (, Process (gets line-1 methylation) or Both
-    2) Outfile
-    2-?) Input fastq file(s) (only uses first if Filtering)
-" unless @ARGV > 1;
+    1) Filter (If NO, nothing. If YES, creates a Line-1 fastq file with line1.fq added to the end)
+    2) Results Table Outfile 
+    3-?) Input fastq file(s) (only uses first if Filtering)
+" unless @ARGV > 2;
 
-my $inseq = shift(@ARGV);	
-#Convert inseq to all uppercase so script doesn't break by case issues
-$inseq =~ tr/[a-z]/[A-Z]/;
+my $filtertag = shift(@ARGV);	
+$filtertag =~ tr/[a-z]/[A-Z]/;
+my $results_outfile = shift(@ARGV);	
+open(RESULTS, ">$results_outfile") or die "cannot open $results_outfile outfile";
 my @infiles = @ARGV;
 
 # Hard coded for now, but should be able to be set as parameter
 my $maxcopies = 1;
-
-#my $stats_filename = shift(@ARGV);	
-#my $out_suffix = shift(@ARGV);
-
-#open(STATS, ">$stats_filename") or die "cannot open $stats_filename outfile";
-#my $seqcount = "seqcount_" . $stats_filename;
-#open(SEQOUT, ">$seqcount") or die "cannot open $seqcount outfile";
 
 # Line1 sequence used to analyze
 # TTYGTGGTGYGTYGTTTTTTAAKTYGGTT
@@ -52,49 +44,24 @@ my $maxcopies = 1;
 # CTCGTGGTGCGCCGTTTCTTAAGCCGGTC
 # CTCGTGGTGCGCCGTTTCTTAA
 
-my @searchterms;
-my @captureterms;
-if($inseq eq "LINE1"){
-#	$inseq = "CTCGTGGTGCGCCGTTTCTTAAGCCGGTC";
-#	$inseq = "CTCGTGGTGCGCCGTTTCTTAA";
-	$inseq = "CTCGTGGTGCGCCGTTTCTTAAGCCG";
-	# Terms without SNP consideration
-#	@searchterms = ("TT[CT]GTGGTG[CT]GT[CT]GTTTTTTAA",
-#					"CTC[GA]TAATAC[GA]CC[GA]TTTCTTAA", 
-#					"TTAAGAAA[CT]GG[CT]GTATTA[CT]GAG", 
-#					"TTAAAAAAC[GA]AC[GA]CACCAC[GA]AA");
 
-	# Terms with SNP consideration
-	
-#	@searchterms = ("TT[CT][GA]TGGTG[CT][GA]T[CT][GA]TTTTTTAA",
-#					"CT[CT][GA]TAATA[CT][GA]C[CT][GA]TTTCTTAA", 
-#					"TTAAGAAA[CT][GA]G[CT][GA]TATTA[CT][GA]AG", 
-#					"TTAAAAAA[CT][GA]A[CT][GA]CACCA[CT][GA]AA");
-#	@captureterms = ("TT([CT][GA])TGGTG([CT][GA])T([CT][GA])TTTTTTAA([GT])T([CT][GA])",
-#					 "CT([CT][GA])TAATA([CT][GA])C([CT][GA])TTTCTTAA([AT])C([CT][GA])", 
-#					 "([CT][GA])G([TA])TTAAGAAA([CT][GA])G([CT][GA])TATTA([CT][GA])AG", 
-#					 "([CT][GA])A([CA])TTAAAAAA([CT][GA])A([CT][GA])CACCA([CT][GA])AA");
-	@searchterms = ("TT[CT][GA]TGGTG[CT][GA]T[CT][GA]TTTTTTAA",
-					"CT[CT][GA]TAATA[CT][GA]C[CT][GA]TTTCTTAA", 
-					"TT[GA][GA][GA][GA][GA][GA][CT][GA][GA][CT][GA]T[GA]TT[GA][CT][GA][GA][GA]",
-					"TTAAAAAA[CT][GA]A[CT][GA]CACCA[CT][GA]AA");
-	@captureterms = ("TT([CT][GA])TGGTG([CT][GA])T([CT][GA])TTTTTTAAGT([CT][GA])",
-					"([CT][GA])[GA]TTT[GA][GA][GA][GA][GA][GA]([CT][GA])[GA]([CT][GA])T[GA]TT[GA]([CT][GA])[GA][GA]");
+my $inseq =         "CTCGTGGTGCGCCGTTTCTTAAGCCG";
+#                    TT  T  G  TGGTG  T  G  T  T  G  TTTTTTAAGT  T  G
+my @searchterms =  ("TT[CT][GA]TGGTG[CT][GA]T[CT][GA]TTTTTTAAGT[CT][GA]",
+#                    CT C    A TAATA C    A C C    A TTTCTTAAAC C    A
+					"CT[CT][GA]TAATA[CT][GA]C[CT][GA]TTTCTTAAAC[CT][GA]", 
+# 					  C    A ACTTAAAAAA C    A A C    A CACCA C    A AA
+					"[CT][GA]ACTTAAAAAA[CT][GA]A[CT][GA]CACCA[CT][GA]AA",
+# 					   T  G  GTTTAAGAAATGGTGTATTATGAG
+					"[CT][GA]GTTTAAGAAA[CT][GA]G[CT][GA]TATTA[CT][GA]AG");
+my @captureterms =  ("TT([CT][GA])TGGTG([CT][GA])T([CT][GA])TTTTTTAAGT([CT][GA])",
+					"CT([CT][GA])TAATA([CT][GA])C([CT][GA])TTTCTTAAAC([CT][GA])", 
+					"([CT][GA])ACTTAAAAAA([CT][GA])A([CT][GA])CACCA([CT][GA])AA",
+					"([CT][GA])GTTTAAGAAA([CT][GA])G([CT][GA])TATTA([CT][GA])AG");
 
-}
-elsif($inseq eq "ALU"){
-	$inseq = "TAGCCGGGCGCGGTGGCGGGCG";
-	# Terms with SNP consideration
-	@searchterms = ("TAGT[CT][GA]GG[CT][GA][CT][GA]GTGG[CT][GA]GG[CT][GA]",
-					"TAAC[CT][GA]AA[CT][GA][CT][GA]ATAA[CT][GA]AA[CT][GA]", 
-					"[CT][GA]TT[CT][GA]TTAT[CT][GA][CT][GA]TT[CT][GA]GTTA", 
-					"[CT][GA]CC[CT][GA]CCAC[CT][GA][CT][GA]CC[CT][GA]ACTA");
-}
-
-my %bs_seq = BS_Convert_All($inseq);
-
-my $printseq = Print_BS_Sequences(\%bs_seq);
-print $printseq;
+#my %bs_seq = BS_Convert_All($inseq);
+#my $printseq = Print_BS_Sequences(\%bs_seq);
+#print $printseq;
 
 
 #################
@@ -103,16 +70,6 @@ print $printseq;
 
 my %results;
 my @names = ("bsfs","bsfo","bsrs","bsro");
-
-#my %search_reads;
-#for(my $t = 0; $t < @names; $t++){
-#	%{$search_reads{$names[$t]}} = %{$bs_seq{$names[$t]}};
-#}
-
-#for(my $t = 0; $t < @names; $t++){
-#	push(@searchterms, $bs_seq{$names[$t]}{"search"});
-#}
-
 
 #Original:             	CTCGTGGTGCGCCGTTTCTTAA
 #BS For Same:          	TT Y  GTGGTG Y  GT Y  GTTTTTTAA
@@ -133,61 +90,13 @@ while(@infiles){
 	my $infile = shift(@infiles);
 
 	print "\nFiltering $infile for all matched reads\n";
-#	my @matched_reads = GetAllMatchReads($infile, @searchterms);
-#	my $outfile = $infile . "_l1reads.fq ";
-#	open(OUT, ">$outfile") or die "cannot open $outfile infile";
-#	for(my $t = 0; $t < @matched_reads; $t++){
-#		print OUT "\n" , $searchterms[$t], "\n\n\n", $matched_reads[$t];
-#	}
-	close OUT;
-
-#	my %SNPsHash = CaptureSNPs($outfile, @captureterms);
 
 	my %SNPsHash = CaptureL1SNPs($infile, @captureterms);
 	my $pstring = PrintL1SNPs(\%SNPsHash);
-	print $pstring;
+	print RESULTS $pstring;
 
-#	my %SNPsHash = CaptureSNPs($infile, @captureterms);
-#	my $cutoff = 2;
-#	foreach my $searchterm (keys %SNPsHash){
-#		my $total = 0;
-#		my $first = "0";
-#		foreach my $key (sort { $SNPsHash{$searchterm}{$b} <=> $SNPsHash{$searchterm}{$a} } keys %{$SNPsHash{$searchterm}}){
-#			if($first eq "0") { 
-#				$first = $key; 
-#				print $key , "\t" , $SNPsHash{$searchterm}{$key}, "\n";
-#			}
-#			elsif($SNPsHash{$searchterm}{$key} >= $cutoff){
-#				my $s1 = $first;
-#				my $s2 = $key;	
-#				my @s1 = split //,$s1;
-#				my @s2 = split //,$s2;
-#				my $i = 0;
-#				foreach  (@s1) {
-#				    if ($_ ne $s2[$i]) {print "$s2[$i]";}
-#				    else {print " ";}
-#			    	$i++;
-#				}
-#	       		print "\t" , $SNPsHash{$searchterm}{$key}, "\n";
-#		    }
-#				$total += $SNPsHash{$searchterm}{$key};
-
-
-#			if ($SNPsHash{$searchterm}{$key} > 1){
-#				print $key , "\t" , $SNPsHash{$searchterm}{$key} , "\n";
-#				$total += $SNPsHash{$searchterm}{$key};
-#			}
-#		}
-#		print "Total:\t$total\n\n";
-#	}
-
-
-
-#	print "\nStarting file: $infile\n";
-#	%{$results{$infile}} = GetAllSNP($infile, $maxcopies, \%search_reads);
-#	print "Consolidating BSSNPs results\n";
-#	%{$results{"processed"}{$infile}} = ConsolidateBSSNPs(\%{$results{$infile}});
 }
+close RESULTS;
 
 #$printseq = PrintSNPs(\%{$results{"processed"}});
 #print $printseq;
@@ -198,6 +107,124 @@ while(@infiles){
 ###############
 # Subroutines #
 ###############
+
+sub CaptureL1SNPs {
+    my $infile = shift;
+	if ($infile =~ /\.gz$/) {open(IN, "gunzip -c $infile |") or die "can't open pipe to $infile";}
+	else{open(IN, "<$infile") or die "cannot open $infile infile";}
+	my @sequences_array = @_;
+    my %SNPsequences;
+    $SNPsequences{$sequences_array[0]}{"count"} = 0;
+    $SNPsequences{$sequences_array[0]}{1}{"CG"} = 0;
+    $SNPsequences{$sequences_array[0]}{1}{"TG"} = 0;
+    $SNPsequences{$sequences_array[0]}{1}{"CA"} = 0;
+    $SNPsequences{$sequences_array[0]}{1}{"TA"} = 0;
+    $SNPsequences{$sequences_array[0]}{2}{"CG"} = 0;
+    $SNPsequences{$sequences_array[0]}{2}{"TG"} = 0;
+    $SNPsequences{$sequences_array[0]}{2}{"CA"} = 0;
+    $SNPsequences{$sequences_array[0]}{2}{"TA"} = 0;
+    $SNPsequences{$sequences_array[0]}{3}{"CG"} = 0;
+    $SNPsequences{$sequences_array[0]}{3}{"TG"} = 0;
+    $SNPsequences{$sequences_array[0]}{3}{"CA"} = 0;
+    $SNPsequences{$sequences_array[0]}{3}{"TA"} = 0;
+    $SNPsequences{$sequences_array[0]}{4}{"CG"} = 0;
+    $SNPsequences{$sequences_array[0]}{4}{"TG"} = 0;
+    $SNPsequences{$sequences_array[0]}{4}{"CA"} = 0;
+    $SNPsequences{$sequences_array[0]}{4}{"TA"} = 0;
+    $SNPsequences{$sequences_array[1]}{"count"} = 0;
+    $SNPsequences{$sequences_array[1]}{1}{"CG"} = 0;
+    $SNPsequences{$sequences_array[1]}{1}{"TG"} = 0;
+    $SNPsequences{$sequences_array[1]}{1}{"CA"} = 0;
+    $SNPsequences{$sequences_array[1]}{1}{"TA"} = 0;
+    $SNPsequences{$sequences_array[1]}{2}{"CG"} = 0;
+    $SNPsequences{$sequences_array[1]}{2}{"TG"} = 0;
+    $SNPsequences{$sequences_array[1]}{2}{"CA"} = 0;
+    $SNPsequences{$sequences_array[1]}{2}{"TA"} = 0;
+    $SNPsequences{$sequences_array[1]}{3}{"CG"} = 0;
+    $SNPsequences{$sequences_array[1]}{3}{"TG"} = 0;
+    $SNPsequences{$sequences_array[1]}{3}{"CA"} = 0;
+    $SNPsequences{$sequences_array[1]}{3}{"TA"} = 0;
+    $SNPsequences{$sequences_array[1]}{4}{"CG"} = 0;
+    $SNPsequences{$sequences_array[1]}{4}{"TG"} = 0;
+    $SNPsequences{$sequences_array[1]}{4}{"CA"} = 0;
+    $SNPsequences{$sequences_array[1]}{4}{"TA"} = 0;
+    $SNPsequences{$sequences_array[2]}{"count"} = 0;
+    $SNPsequences{$sequences_array[2]}{1}{"CG"} = 0;
+    $SNPsequences{$sequences_array[2]}{1}{"TG"} = 0;
+    $SNPsequences{$sequences_array[2]}{1}{"CA"} = 0;
+    $SNPsequences{$sequences_array[2]}{1}{"TA"} = 0;
+    $SNPsequences{$sequences_array[2]}{2}{"CG"} = 0;
+    $SNPsequences{$sequences_array[2]}{2}{"TG"} = 0;
+    $SNPsequences{$sequences_array[2]}{2}{"CA"} = 0;
+    $SNPsequences{$sequences_array[2]}{2}{"TA"} = 0;
+    $SNPsequences{$sequences_array[2]}{3}{"CG"} = 0;
+    $SNPsequences{$sequences_array[2]}{3}{"TG"} = 0;
+    $SNPsequences{$sequences_array[2]}{3}{"CA"} = 0;
+    $SNPsequences{$sequences_array[2]}{3}{"TA"} = 0;
+    $SNPsequences{$sequences_array[2]}{4}{"CG"} = 0;
+    $SNPsequences{$sequences_array[2]}{4}{"TG"} = 0;
+    $SNPsequences{$sequences_array[2]}{4}{"CA"} = 0;
+    $SNPsequences{$sequences_array[2]}{4}{"TA"} = 0;
+    $SNPsequences{$sequences_array[3]}{"count"} = 0;
+    $SNPsequences{$sequences_array[3]}{1}{"CG"} = 0;
+    $SNPsequences{$sequences_array[3]}{1}{"TG"} = 0;
+    $SNPsequences{$sequences_array[3]}{1}{"CA"} = 0;
+    $SNPsequences{$sequences_array[3]}{1}{"TA"} = 0;
+    $SNPsequences{$sequences_array[3]}{2}{"CG"} = 0;
+    $SNPsequences{$sequences_array[3]}{2}{"TG"} = 0;
+    $SNPsequences{$sequences_array[3]}{2}{"CA"} = 0;
+    $SNPsequences{$sequences_array[3]}{2}{"TA"} = 0;
+    $SNPsequences{$sequences_array[3]}{3}{"CG"} = 0;
+    $SNPsequences{$sequences_array[3]}{3}{"TG"} = 0;
+    $SNPsequences{$sequences_array[3]}{3}{"CA"} = 0;
+    $SNPsequences{$sequences_array[3]}{3}{"TA"} = 0;
+    $SNPsequences{$sequences_array[3]}{4}{"CG"} = 0;
+    $SNPsequences{$sequences_array[3]}{4}{"TG"} = 0;
+    $SNPsequences{$sequences_array[3]}{4}{"CA"} = 0;
+    $SNPsequences{$sequences_array[3]}{4}{"TA"} = 0;
+    
+	while (<IN>) {
+	    my $ID = $_;
+   		my $seq = <IN>;
+	  	chop($seq); #gets rid of return character at end of sequence
+	    my $third = <IN>;
+	    my $quality = <IN>;
+		for(my $n = 0; $n < @sequences_array; $n++){
+	    	if($seq =~ /$sequences_array[$n]/){
+				$SNPsequences{$sequences_array[$n]}{"count"}++;
+				$SNPsequences{$sequences_array[$n]}{1}{$1} = $SNPsequences{$sequences_array[$n]}{1}{$1} + 1;
+				$SNPsequences{$sequences_array[$n]}{2}{$2} = $SNPsequences{$sequences_array[$n]}{2}{$2} + 1;
+				$SNPsequences{$sequences_array[$n]}{3}{$3} = $SNPsequences{$sequences_array[$n]}{3}{$3} + 1;
+				$SNPsequences{$sequences_array[$n]}{4}{$4} = $SNPsequences{$sequences_array[$n]}{4}{$4} + 1;
+			}
+		}
+	}
+	close IN;
+	return(%SNPsequences);
+}
+
+sub PrintL1SNPs{
+	my ($seq_ref) = @_;
+    my %SNPsequences = %$seq_ref;
+    my $printstring = "";
+	foreach my $searchstring (keys %SNPsequences) {
+		if($SNPsequences{$searchstring}{"count"} == 0){next;}
+		$printstring = $printstring . "Reads matched to " . $searchstring . ":\t" . $SNPsequences{$searchstring}{"count"} . "\n";
+		for(my $SNPloc = 1; $SNPloc < 5; $SNPloc++){
+			$printstring = $printstring . "For CpG " . $SNPloc . ":" . 
+			"\tCG:" . $SNPsequences{$searchstring}{$SNPloc}{"CG"} . 
+			" (" .  sprintf("%.2f", 100*$SNPsequences{$searchstring}{$SNPloc}{"CG"}/$SNPsequences{$searchstring}{"count"}) . "%)" .
+			"\tTG:" . $SNPsequences{$searchstring}{$SNPloc}{"TG"} . 
+			" (" .  sprintf("%.2f", 100*$SNPsequences{$searchstring}{$SNPloc}{"TG"}/$SNPsequences{$searchstring}{"count"}) . "%)" .
+			"\t\tCA:" . $SNPsequences{$searchstring}{$SNPloc}{"CA"} . 
+			" (" .  sprintf("%.2f", 100*$SNPsequences{$searchstring}{$SNPloc}{"CA"}/$SNPsequences{$searchstring}{"count"}) . "%)" .
+			"\tTA:" . $SNPsequences{$searchstring}{$SNPloc}{"TA"} .
+			" (" .  sprintf("%.2f", 100*$SNPsequences{$searchstring}{$SNPloc}{"TA"}/$SNPsequences{$searchstring}{"count"}) . "%)\n";
+		}
+		$printstring = $printstring . "\n";
+	}
+	return($printstring);
+}
 
 sub BS_Convert_All{
     my $dna = shift;
@@ -326,7 +353,8 @@ sub Print_BS_Sequences {
 sub GetAllSNP {
     my $infile = shift;
     my $maxcopies = shift;
-	open(IN, "<$infile") or die "cannot open $infile infile";
+	if ($infile =~ /\.gz$/) {open(IN, "gunzip -c $infile |") or die "can't open pipe to $infile";}
+	else{open(IN, "<$infile") or die "cannot open $infile infile";}
 	my ($seq_ref) = @_;
     my %sequences = %$seq_ref;
     my %SNPhash;
@@ -362,7 +390,8 @@ sub GetAllSNP {
 
 sub GetAllMatchReads {
     my $infile = shift;
-	open(IN, "<$infile") or die "cannot open $infile infile";
+	if ($infile =~ /\.gz$/) {open(IN, "gunzip -c $infile |") or die "can't open pipe to $infile";}
+	else{open(IN, "<$infile") or die "cannot open $infile infile";}
 	my @sequences_array = @_;
     my @matched_reads;
     my @counts;
@@ -395,7 +424,8 @@ sub GetAllMatchReads {
 
 sub CaptureSNPs {
     my $infile = shift;
-	open(IN, "<$infile") or die "cannot open $infile infile";
+	if ($infile =~ /\.gz$/) {open(IN, "gunzip -c $infile |") or die "can't open pipe to $infile";}
+	else{open(IN, "<$infile") or die "cannot open $infile infile";}
 	my @sequences_array = @_;
     my %SNPsequences;
 #    my @counts;
@@ -426,96 +456,6 @@ sub CaptureSNPs {
 #	for(my $n = 0; $n < @sequences_array; $n++){ print "$sequences_array[$n]\t\t$counts[$n]\n"; }
 	
 	return(%SNPsequences);
-}
-
-sub CaptureL1SNPs {
-    my $infile = shift;
-	open(IN, "<$infile") or die "cannot open $infile infile";
-	my @sequences_array = @_;
-    my %SNPsequences;
-    $SNPsequences{$sequences_array[0]}{"count"} = 0;
-    $SNPsequences{$sequences_array[0]}{1}{"CG"} = 0;
-    $SNPsequences{$sequences_array[0]}{1}{"TG"} = 0;
-    $SNPsequences{$sequences_array[0]}{1}{"CA"} = 0;
-    $SNPsequences{$sequences_array[0]}{1}{"TA"} = 0;
-    $SNPsequences{$sequences_array[0]}{2}{"CG"} = 0;
-    $SNPsequences{$sequences_array[0]}{2}{"TG"} = 0;
-    $SNPsequences{$sequences_array[0]}{2}{"CA"} = 0;
-    $SNPsequences{$sequences_array[0]}{2}{"TA"} = 0;
-    $SNPsequences{$sequences_array[0]}{3}{"CG"} = 0;
-    $SNPsequences{$sequences_array[0]}{3}{"TG"} = 0;
-    $SNPsequences{$sequences_array[0]}{3}{"CA"} = 0;
-    $SNPsequences{$sequences_array[0]}{3}{"TA"} = 0;
-    $SNPsequences{$sequences_array[0]}{4}{"CG"} = 0;
-    $SNPsequences{$sequences_array[0]}{4}{"TG"} = 0;
-    $SNPsequences{$sequences_array[0]}{4}{"CA"} = 0;
-    $SNPsequences{$sequences_array[0]}{4}{"TA"} = 0;
-    $SNPsequences{$sequences_array[1]}{"count"} = 0;
-    $SNPsequences{$sequences_array[1]}{1}{"CG"} = 0;
-    $SNPsequences{$sequences_array[1]}{1}{"TG"} = 0;
-    $SNPsequences{$sequences_array[1]}{1}{"CA"} = 0;
-    $SNPsequences{$sequences_array[1]}{1}{"TA"} = 0;
-    $SNPsequences{$sequences_array[1]}{2}{"CG"} = 0;
-    $SNPsequences{$sequences_array[1]}{2}{"TG"} = 0;
-    $SNPsequences{$sequences_array[1]}{2}{"CA"} = 0;
-    $SNPsequences{$sequences_array[1]}{2}{"TA"} = 0;
-    $SNPsequences{$sequences_array[1]}{3}{"CG"} = 0;
-    $SNPsequences{$sequences_array[1]}{3}{"TG"} = 0;
-    $SNPsequences{$sequences_array[1]}{3}{"CA"} = 0;
-    $SNPsequences{$sequences_array[1]}{3}{"TA"} = 0;
-    $SNPsequences{$sequences_array[1]}{4}{"CG"} = 0;
-    $SNPsequences{$sequences_array[1]}{4}{"TG"} = 0;
-    $SNPsequences{$sequences_array[1]}{4}{"CA"} = 0;
-    $SNPsequences{$sequences_array[1]}{4}{"TA"} = 0;
-    
-#    my @counts;
-#    for (my $r = 0; $r < @sequences_array; $r++){
-#		$matched_reads[$r] = "";
-#		$counts[$r] = 0;
-#    }
-#    my $counter = 0;
-	while (<IN>) {
-#		$counter++;
-#		if($counter % 100000 == 0) {print $counter , "\n";}
-	    my $ID = $_;
-   		my $seq = <IN>;
-	  	chop($seq); #gets rid of return character at end of sequence
-	    my $third = <IN>;
-	    my $quality = <IN>;
-		for(my $n = 0; $n < @sequences_array; $n++){
-	    	if($seq =~ /$sequences_array[$n]/){
-				$SNPsequences{$sequences_array[$n]}{"count"}++;
-				$SNPsequences{$sequences_array[$n]}{1}{$1} = $SNPsequences{$sequences_array[$n]}{1}{$1} + 1;
-				$SNPsequences{$sequences_array[$n]}{2}{$1} = $SNPsequences{$sequences_array[$n]}{2}{$2} + 1;
-				$SNPsequences{$sequences_array[$n]}{3}{$1} = $SNPsequences{$sequences_array[$n]}{3}{$3} + 1;
-				$SNPsequences{$sequences_array[$n]}{4}{$1} = $SNPsequences{$sequences_array[$n]}{4}{$1} + 1;
-			}
-		}
-	}
-	close IN;
-	return(%SNPsequences);
-}
-
-sub PrintL1SNPs{
-	my ($seq_ref) = @_;
-    my %SNPsequences = %$seq_ref;
-    my $printstring = "";
-	foreach my $searchstring (keys %SNPsequences) {
-		$printstring = $printstring . "Reads matched to " . $searchstring . ":\t" . $SNPsequences{$searchstring}{"count"} . "\n";
-		for(my $SNPloc = 1; $SNPloc < 5; $SNPloc++){
-			$printstring = $printstring . "For CpG " . $SNPloc . ":" . 
-			"\tCG:" . $SNPsequences{$searchstring}{$SNPloc}{"CG"} . 
-			" (" .  sprintf("%.2f", 100*$SNPsequences{$searchstring}{$SNPloc}{"CG"}/$SNPsequences{$searchstring}{"count"}) . "%)" .
-			"\tTG:" . $SNPsequences{$searchstring}{$SNPloc}{"TG"} . 
-			" (" .  sprintf("%.2f", 100*$SNPsequences{$searchstring}{$SNPloc}{"TG"}/$SNPsequences{$searchstring}{"count"}) . "%)" .
-			"\t\tCA:" . $SNPsequences{$searchstring}{$SNPloc}{"CA"} . 
-			" (" .  sprintf("%.2f", 100*$SNPsequences{$searchstring}{$SNPloc}{"CA"}/$SNPsequences{$searchstring}{"count"}) . "%)" .
-			"\tTA:" . $SNPsequences{$searchstring}{$SNPloc}{"TA"} .
-			" (" .  sprintf("%.2f", 100*$SNPsequences{$searchstring}{$SNPloc}{"TA"}/$SNPsequences{$searchstring}{"count"}) . "%)\n";
-		}
-		$printstring = $printstring . "\n";
-	}
-	return($printstring);
 }
 
 # returns a hash of characters at specific location in a string
